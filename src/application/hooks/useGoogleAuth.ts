@@ -22,7 +22,7 @@
 //     scopes: ['openid', 'profile', 'email'],
     
 //     // 🔥 URI explícito que ya funciona
-//     redirectUri: 'https://auth.expo.io/@axelone/MyFinanceApp',
+//     redirectUri: 'https://auth.expo.io/@axelone/Financify',
 //   });
   
 //   // Debug: mostrar configuración
