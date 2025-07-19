@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Financify",
-    "slug": "Financify",
+    "slug": "MyFinanceApp",
     "scheme": "Financify",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.orsteddev.simplefinance"
+      "package": "com.orsteddev.financify"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,8 +32,7 @@
         "projectId": "c1c13e68-1cf0-41e3-8c80-0c3c25267953"
       }
     },
-    "plugins": [
-    
-    ]
+    "plugins": [],
+    "owner": "axelone"
   }
 }
