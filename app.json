@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "MyFinanceApp",
+    "slug": "MyFinanceApp",
+    "scheme": "MyFinanceApp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.orsteddev.simplefinance"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c1c13e68-1cf0-41e3-8c80-0c3c25267953"
+      }
+    },
+    "plugins": [
+    
+    ]
+  }
+}
