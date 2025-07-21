@@ -1,7 +1,7 @@
 // Representa una billetera o cuenta bancaria que almacena dinero del usuario
 
 export interface Wallet {
-  id: string;
+  id?: number;
   name: string;
   description: string;
   type: string;
@@ -14,7 +14,7 @@ export interface Wallet {
 
 /*
 const walletBCP: Wallet = {
-  id: "wallet2",
+  id: 1,
   name: "Cuenta BCP",
   description: "Cuentas corrientes",
   type: "cuentaBancaria", // En duro, constante

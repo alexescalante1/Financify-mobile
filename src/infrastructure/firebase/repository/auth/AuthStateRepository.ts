@@ -1,7 +1,7 @@
 // infrastructure/firebase/AuthStateRepository.ts
 import { injectable, container } from 'tsyringe';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/infrastructure/firebase/firebaseConfig';
+import { auth } from '@/infrastructure/firebase/FirebaseConfiguration';
 
 import { User } from '@/domain/models/User';
 import { IAuthStateRepository } from '@/domain/repository/IAuthStateRepository';

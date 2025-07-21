@@ -11,7 +11,7 @@ import {
   deleteDoc,
   updateDoc
 } from 'firebase/firestore';
-import { db } from '@/infrastructure/firebase/firebaseConfig';
+import { db } from '@/infrastructure/firebase/FirebaseConfiguration';
 import { ITransactionRepository } from '@/domain/repository/ITransactionRepository';
 import { Transaction, TransactionDetail } from '@/domain/models/Transaction';
 import { TransactionVo } from '@/domain/valueObjects/TransactionVo';

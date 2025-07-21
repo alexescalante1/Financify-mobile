@@ -5,7 +5,7 @@ import {
   where, 
   onSnapshot 
 } from 'firebase/firestore';
-import { db } from '@/infrastructure/firebase/firebaseConfig'; // Ajusta el path según tu estructura
+import { db } from '@/infrastructure/firebase/FirebaseConfiguration'; // Ajusta el path según tu estructura
 import { ITransactionStateRepository } from '@/domain/repository/ITransactionStateRepository';
 import { Transaction } from '@/domain/models/Transaction';
 

@@ -7,7 +7,7 @@ import {
   signOut,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/infrastructure/firebase/firebaseConfig';
+import { auth, db } from '@/infrastructure/firebase/FirebaseConfiguration';
 
 import { IAuthRepository } from '@/domain/repository/IAuthRepository';
 import { User } from '@/domain/models/User';
@@ -21,7 +21,7 @@ export class AuthRepository implements IAuthRepository {
       userData.email,
       userData.password
     );
-
+    
     const now = new Date().toISOString();
     
     const user: Omit<User, 'id'> = {
