@@ -13,8 +13,8 @@ import {
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTransactions } from "@/application/hooks/useTransactions";
-import { DeleteConfirmationModal } from "@/presentation/screens/transactions/DeleteConfirmationModal";
-import { TransactionDetailModal } from "@/presentation/screens/transactions/TransactionDetailModal";
+import { DeleteConfirmationModal } from "@/presentation/screens/home/transactions/DeleteConfirmationModal";
+import { TransactionDetailModal } from "@/presentation/screens/home/transactions/TransactionDetailModal";
 import { Transaction, TransactionDetail } from "@/domain/models/Transaction";
 
 type FilterType = "all" | "income" | "expense";

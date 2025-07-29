@@ -23,6 +23,8 @@ import { PeriodSelector } from "./components/PeriodSelector";
 import { PeriodSummary } from "./components/PeriodSummary";
 import { BalanceChart } from "./components/BalanceChart";
 
+import {TransactionListScreen} from "./transactions/TransactionListScreen";
+
 const screenWidth: number = Dimensions.get("window").width;
 
 type ChartPeriod = "daily" | "monthly" | "quarterly" | "yearly";
@@ -390,7 +392,11 @@ const HomeScreen: React.FC = () => {
         
         <BalanceChart chartData={chartData} chartPeriod={chartPeriod} />
 
+
+        <TransactionListScreen />
         <View style={{ height: 50 }} />
+
+
       </ScrollView>
 
       {/* Modales */}

@@ -47,6 +47,12 @@ export class AuthStorageService {
         return true;
       }
       
+      // ✅ NUEVO: Auto-refrescar sesión si está autenticado
+      if (authState === 'authenticated' && user !== null) {
+        await this.refreshSession();
+        return true;
+      }
+      
       return authState === 'authenticated' && user !== null;
     } catch (error) {
       console.error('Error verificando autenticación:', error);
@@ -83,34 +89,49 @@ export class AuthStorageService {
     return lastLogin ? new Date(lastLogin) : null;
   }
 
-  // ✅ CAMBIO: Aumentar tiempo de expiración y agregar modo desarrollo
-  static async isSessionExpired(maxDaysValid: number = 365): Promise<boolean> { // ✅ Cambié de 30 a 365 días
-    // ✅ En desarrollo, nunca expirar
-    if (__DEV__) {
-      console.log('🔧 Modo desarrollo: sesión nunca expira');
-      return false;
-    }
-
+  // ✅ CAMBIO: Nunca expirar en ningún entorno
+  static async isSessionExpired(maxDaysValid: number = 365): Promise<boolean> {
+    console.log('🔧 Sesión configurada para nunca expirar');
+    
+    // ✅ Siempre refrescar la sesión cuando se verifica
+    await this.refreshSession();
+    
+    // ✅ Nunca expirar - solo verificar que exista lastLogin
     const lastLogin = await this.getLastLogin();
-    if (!lastLogin) return true;
-
-    const now = new Date();
-    const daysDiff = (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24);
+    if (!lastLogin) {
+      console.log('❌ No hay lastLogin almacenado');
+      return true;
+    }
     
-    console.log(`📅 Días desde último login: ${Math.floor(daysDiff)} / ${maxDaysValid}`);
-    
-    return daysDiff > maxDaysValid;
+    console.log(`✅ Sesión válida - último login: ${lastLogin.toLocaleString()}`);
+    return false; // Nunca expira
   }
 
-  // ✅ NUEVO: Método para refrescar sesión sin limpiar datos
+  // ✅ MEJORADO: Método para refrescar sesión
   static async refreshSession(): Promise<boolean> {
     try {
-      await StorageService.set(this.LAST_LOGIN_KEY, new Date().toISOString());
-      console.log('🔄 Sesión refrescada');
+      const now = new Date().toISOString();
+      await StorageService.set(this.LAST_LOGIN_KEY, now);
+      console.log(`🔄 Sesión refrescada: ${new Date(now).toLocaleString()}`);
       return true;
     } catch (error) {
       console.error('Error refrescando sesión:', error);
       return false;
+    }
+  }
+
+  // ✅ NUEVO: Auto-refrescar cada vez que la app se inicia
+  static async autoRefreshOnAppStart(): Promise<void> {
+    try {
+      const user = await this.getUser();
+      const authState = await StorageService.get<string>(this.AUTH_STATE_KEY);
+      
+      if (user && authState === 'authenticated') {
+        await this.refreshSession();
+        console.log('🚀 Auto-refresh completado al iniciar app');
+      }
+    } catch (error) {
+      console.error('Error en auto-refresh:', error);
     }
   }
 
@@ -132,16 +153,33 @@ export class AuthStorageService {
     return results.every(result => result);
   }
 
-  // ✅ NUEVO: Limpiar solo si está expirado, sino refrescar
+  // ✅ MODIFICADO: Solo refrescar, nunca limpiar por expiración
   static async cleanupOrRefresh(): Promise<boolean> {
-    const isExpired = await this.isSessionExpired();
+    const user = await this.getUser();
+    const authState = await StorageService.get<string>(this.AUTH_STATE_KEY);
     
-    if (isExpired) {
-      console.log('🧹 Sesión expirada, limpiando...');
+    // Solo limpiar si realmente no hay datos válidos
+    if (!user || authState !== 'authenticated') {
+      console.log('🧹 No hay datos de usuario válidos, limpiando...');
       return await this.clearAuthData();
     } else {
-      console.log('🔄 Sesión válida, refrescando...');
+      console.log('🔄 Datos válidos encontrados, refrescando sesión...');
       return await this.refreshSession();
+    }
+  }
+
+  // ✅ NUEVO: Verificar y mantener sesión activa
+  static async keepSessionAlive(): Promise<boolean> {
+    try {
+      const isAuth = await this.isUserAuthenticated();
+      if (isAuth) {
+        await this.refreshSession();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error manteniendo sesión activa:', error);
+      return false;
     }
   }
 
@@ -162,7 +200,8 @@ export class AuthStorageService {
       this.getLoginMethod()
     ]);
 
-    const sessionExpired = await this.isSessionExpired();
+    // ✅ Siempre false porque nunca expira
+    const sessionExpired = false;
 
     return {
       isAuthenticated,

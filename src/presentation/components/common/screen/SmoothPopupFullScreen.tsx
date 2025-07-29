@@ -161,7 +161,7 @@ export const SmoothPopupFullScreen: React.FC<SmoothPopupFullScreenProps> = React
     }
 
     return cleanupAnimation;
-  }, [visible, shouldRender, isClosing, forceClose, scale, opacity]); // Dependencias actualizadas
+  }, [visible, shouldRender, isClosing, forceClose, scale, opacity]);
 
   // Callback memoizado con cierre inmediato
   const handleDismiss = useCallback(() => {
@@ -205,12 +205,7 @@ export const SmoothPopupFullScreen: React.FC<SmoothPopupFullScreenProps> = React
             })
           }
         ]}
-      >
-        <StatusBar 
-          backgroundColor={backgroundColor || theme.colors.surface}
-          barStyle={theme.dark ? "light-content" : "dark-content"}
-        />
-        
+      >        
         <Animated.View
           style={[
             staticStyles.animatedContainer,
