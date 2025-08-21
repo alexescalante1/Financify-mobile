@@ -15,6 +15,12 @@ class AuthManager {
   private isInitializing = false;
   private hasInitialized = false;
   
+  // ✅ NUEVO: Control de estabilidad
+  private isStabilizing = false;
+  private stabilizationTimeout: NodeJS.Timeout | null = null;
+  private lastAuthChange = 0;
+  private firebaseUnsubscribe: (() => void) | null = null;
+  
   public state = {
     user: null as User | null,
     loading: true,
@@ -47,12 +53,33 @@ class AuthManager {
   }
 
   private notify() {
-    this.listeners.forEach(listener => listener());
+    // ✅ NUEVO: Solo notificar si no está estabilizando
+    if (!this.isStabilizing) {
+      this.listeners.forEach(listener => listener());
+    }
   }
 
   private updateState(updates: Partial<typeof this.state>) {
     this.state = { ...this.state, ...updates };
     this.notify();
+  }
+
+  // ✅ NUEVO: Actualización estable con debounce
+  private stableUpdateState(updates: Partial<typeof this.state>, delay: number = 300) {
+    // Cancelar timeout anterior
+    if (this.stabilizationTimeout) {
+      clearTimeout(this.stabilizationTimeout);
+    }
+
+    // Marcar como estabilizando
+    this.isStabilizing = true;
+    
+    // Aplicar cambios después del delay
+    this.stabilizationTimeout = setTimeout(() => {
+      this.state = { ...this.state, ...updates };
+      this.isStabilizing = false;
+      this.notify();
+    }, delay);
   }
 
   private async initialize() {
@@ -65,67 +92,93 @@ class AuthManager {
       // Inicializar SQLite
       await AuthStorageService.init();
       
-      // Verificar sesión
+      // Verificar sesión local primero (más rápido)
       await AuthStorageService.cleanupOrRefresh();
       const sessionInfo = await AuthStorageService.getSessionInfo();
       
       if (sessionInfo.isAuthenticated && sessionInfo.user && !sessionInfo.sessionExpired) {
-        console.log('✅ Sesión válida encontrada');
+        console.log('✅ Sesión local válida - estableciendo usuario inmediatamente');
+        
+        // ✅ CAMBIO: Establecer usuario inmediatamente sin esperas
         this.updateState({
           user: sessionInfo.user,
           loading: false,
           isInitialized: true,
         });
         
-        // Verificar Firebase en background
-        setTimeout(() => this.verifyFirebaseAuth(), 1000);
+        // ✅ NUEVO: Configurar Firebase listener DESPUÉS de establecer estado local
+        setTimeout(() => this.setupFirebaseListener(true), 100);
+        
       } else {
-        console.log('❌ Sin sesión válida');
-        if (sessionInfo.user && (!sessionInfo.isAuthenticated || sessionInfo.sessionExpired)) {
-          await AuthStorageService.clearAuthData();
-        }
-        this.setupFirebaseListener();
+        console.log('❌ Sin sesión local válida');
+        await AuthStorageService.clearAuthData();
+        
+        // ✅ CAMBIO: Configurar Firebase listener inmediatamente
+        this.setupFirebaseListener(false);
       }
     } catch (error) {
       console.error('💥 Error inicializando:', error);
       await AuthStorageService.clearAuthData();
-      this.setupFirebaseListener();
+      this.setupFirebaseListener(false);
     } finally {
       this.isInitializing = false;
       this.hasInitialized = true;
     }
   }
 
-  private async verifyFirebaseAuth() {
-    try {
-      const firebaseUser = await this.authStateRepository.getCurrentAuthState();
-      const storageUser = await AuthStorageService.getUser();
-
-      if (!firebaseUser && storageUser) {
-        console.log('🧹 Limpiando SQLite - Firebase sin usuario');
-        await AuthStorageService.clearAuthData();
-        this.updateState({ user: null });
-        this.setupFirebaseListener();
-      } else if (firebaseUser && storageUser && firebaseUser.id === storageUser.id) {
-        console.log('✅ Firebase y SQLite sincronizados');
-        await AuthStorageService.refreshSession();
-      }
-    } catch (error) {
-      console.error('💥 Error verificando Firebase:', error);
+  // ✅ MEJORADO: Firebase listener con control de parpadeo
+  private setupFirebaseListener(hasLocalSession: boolean) {
+    console.log('👂 Configurando Firebase listener...', { hasLocalSession });
+    
+    // Limpiar listener anterior si existe
+    if (this.firebaseUnsubscribe) {
+      this.firebaseUnsubscribe();
     }
-  }
-
-  private setupFirebaseListener() {
-    console.log('👂 Configurando Firebase listener...');
-    this.authStateRepository.onAuthStateChanged(async (userData) => {
+    
+    this.firebaseUnsubscribe = this.authStateRepository.onAuthStateChanged(async (userData) => {
+      const now = Date.now();
+      
+      // ✅ NUEVO: Evitar cambios muy frecuentes
+      if (now - this.lastAuthChange < 500) {
+        console.log('🚫 Cambio de auth ignorado - muy frecuente');
+        return;
+      }
+      this.lastAuthChange = now;
+      
+      console.log('🔥 Firebase auth cambió:', { hasUser: !!userData, userId: userData?.id });
+      
       if (userData) {
+        // ✅ CAMBIO: Verificar si ya tenemos este usuario localmente
+        const currentUser = this.state.user;
+        if (currentUser && currentUser.id === userData.id) {
+          console.log('✅ Usuario ya establecido localmente - solo refrescando');
+          await AuthStorageService.refreshSession();
+          return;
+        }
+        
+        // Usuario nuevo o diferente
+        console.log('📱 Guardando usuario desde Firebase');
         await AuthStorageService.saveUser(userData);
-        this.updateState({ user: userData });
+        
+        // ✅ NUEVO: Si ya había sesión local, usar actualización estable
+        if (hasLocalSession && this.state.user) {
+          this.stableUpdateState({ user: userData }, 100);
+        } else {
+          this.updateState({ user: userData });
+        }
+        
       } else {
+        // Sin usuario en Firebase
+        console.log('🚪 Firebase sin usuario - limpiando');
         await AuthStorageService.clearAuthData();
-        this.updateState({ user: null });
+        
+        // ✅ NUEVO: Solo actualizar si realmente había un usuario
+        if (this.state.user) {
+          this.stableUpdateState({ user: null }, 200);
+        }
       }
       
+      // ✅ CAMBIO: Marcar como inicializado solo al final
       if (!this.state.isInitialized) {
         this.updateState({ loading: false, isInitialized: true });
       }
@@ -152,10 +205,14 @@ class AuthManager {
       this.updateState({ loading: true, error: null });
       const userData = await this.authRepository.login(email, password);
       
+      // ✅ CAMBIO: Guardar en SQLite primero, antes que Firebase notifique
       await AuthStorageService.saveUser(userData);
       await AuthStorageService.saveLoginMethod('email');
       
+      // ✅ NUEVO: Establecer usuario inmediatamente
       this.updateState({ user: userData, loading: false });
+      
+      console.log('✅ Login completado - usuario establecido');
     } catch (err: any) {
       this.updateState({ error: err.message, loading: false });
       throw err;
@@ -166,10 +223,18 @@ class AuthManager {
     try {
       this.updateState({ loading: true });
       
+      // ✅ CAMBIO: Limpiar local primero
       await AuthStorageService.clearAuthData();
-      await this.authRepository.logout();
       
+      // ✅ NUEVO: Establecer estado inmediatamente
       this.updateState({ user: null, loading: false });
+      
+      // Firebase logout en background
+      this.authRepository.logout().catch(err => {
+        console.warn('⚠️ Error en logout de Firebase:', err);
+      });
+      
+      console.log('🚪 Logout completado');
     } catch (err: any) {
       this.updateState({ error: err.message, loading: false });
       await AuthStorageService.clearAuthData();
@@ -186,6 +251,26 @@ class AuthManager {
       return false;
     }
   }
+
+  // ✅ NUEVO: Método para forzar estabilización
+  forceStabilize() {
+    if (this.stabilizationTimeout) {
+      clearTimeout(this.stabilizationTimeout);
+      this.isStabilizing = false;
+      this.notify();
+    }
+  }
+
+  // ✅ NUEVO: Cleanup al destruir
+  destroy() {
+    if (this.firebaseUnsubscribe) {
+      this.firebaseUnsubscribe();
+    }
+    if (this.stabilizationTimeout) {
+      clearTimeout(this.stabilizationTimeout);
+    }
+    this.listeners.clear();
+  }
 }
 
 export const useAuth = () => {
@@ -200,6 +285,13 @@ export const useAuth = () => {
     return authManager.subscribe(rerender);
   }, [rerender]);
 
+  // ✅ NUEVO: Cleanup en unmount del componente principal
+  useEffect(() => {
+    return () => {
+      // Solo limpiar la suscripción, no destruir el manager
+    };
+  }, []);
+
   return {
     user: authManager.state.user,
     loading: authManager.state.loading,
@@ -210,5 +302,8 @@ export const useAuth = () => {
     login: (email: string, password: string) => authManager.login(email, password),
     logout: () => authManager.logout(),
     checkIsGoogleUser: () => authManager.checkIsGoogleUser(),
+    
+    // ✅ NUEVO: Método de emergencia para estabilizar
+    forceStabilize: () => authManager.forceStabilize(),
   };
 };
