@@ -7,7 +7,6 @@ import { User } from '@/domain/models/User';
 import { UserRegistrationVo } from '@/domain/valueObjects/UserRegistrationVo';
 import { AuthStorageService } from '@/infrastructure/storage/modules/AuthStorageService';
 
-// ✅ Estado global singleton
 class AuthManager {
   private static instance: AuthManager;
   private authRepository: IAuthRepository;
@@ -38,7 +37,6 @@ class AuthManager {
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
     
-    // Inicializar solo una vez
     if (!this.hasInitialized && !this.isInitializing) {
       this.initialize();
     }
@@ -62,8 +60,12 @@ class AuthManager {
     
     try {
       this.isInitializing = true;
-      console.log('🔄 Inicializando auth manager...');
+      console.log('🔄 Inicializando auth...');
       
+      // Inicializar SQLite
+      await AuthStorageService.init();
+      
+      // Verificar sesión
       await AuthStorageService.cleanupOrRefresh();
       const sessionInfo = await AuthStorageService.getSessionInfo();
       
@@ -79,7 +81,7 @@ class AuthManager {
         setTimeout(() => this.verifyFirebaseAuth(), 1000);
       } else {
         console.log('❌ Sin sesión válida');
-        if (sessionInfo.user && !sessionInfo.isAuthenticated) {
+        if (sessionInfo.user && (!sessionInfo.isAuthenticated || sessionInfo.sessionExpired)) {
           await AuthStorageService.clearAuthData();
         }
         this.setupFirebaseListener();
@@ -100,12 +102,12 @@ class AuthManager {
       const storageUser = await AuthStorageService.getUser();
 
       if (!firebaseUser && storageUser) {
-        console.log('🧹 Limpiando storage - Firebase sin usuario');
+        console.log('🧹 Limpiando SQLite - Firebase sin usuario');
         await AuthStorageService.clearAuthData();
         this.updateState({ user: null });
         this.setupFirebaseListener();
       } else if (firebaseUser && storageUser && firebaseUser.id === storageUser.id) {
-        console.log('✅ Firebase y storage sincronizados');
+        console.log('✅ Firebase y SQLite sincronizados');
         await AuthStorageService.refreshSession();
       }
     } catch (error) {
@@ -186,7 +188,6 @@ class AuthManager {
   }
 }
 
-// ✅ Hook que usa el singleton
 export const useAuth = () => {
   const [, forceUpdate] = useState({});
   const authManager = AuthManager.getInstance();

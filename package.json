@@ -38,7 +38,8 @@
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.10.0",
     "yup": "^1.6.1",
-    "@react-native-community/netinfo": "11.4.1"
+    "@react-native-community/netinfo": "11.4.1",
+    "expo-sqlite": "~15.2.14"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

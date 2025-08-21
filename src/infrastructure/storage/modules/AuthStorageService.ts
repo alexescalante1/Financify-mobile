@@ -1,4 +1,5 @@
-import { StorageService } from '../StorageService';
+// infrastructure/storage/modules/AuthStorageService.ts
+import { SQLiteStorageService } from '../SQLiteStorageService';
 import { User } from '@/domain/models/User';
 
 export class AuthStorageService {
@@ -7,137 +8,101 @@ export class AuthStorageService {
   private static readonly LAST_LOGIN_KEY = 'lastLogin';
   private static readonly LOGIN_METHOD_KEY = 'loginMethod';
 
-  // Configurar storage al inicializar la app
-  static init(): void {
-    StorageService.setPrefix('FinanzasAuth');
+  static async init(): Promise<void> {
+    SQLiteStorageService.setPrefix('FinanzasAuth');
+    await SQLiteStorageService.init();
+    console.log('✅ AuthStorageService inicializado');
   }
 
-  // ==================== GESTIÓN DE USUARIO ====================
+  // ==================== USUARIO ====================
   
-  // Guardar usuario completo
   static async saveUser(user: User): Promise<boolean> {
-    const success = await StorageService.setObject(this.USER_KEY, user);
-    if (success) {
-      await StorageService.set(this.LAST_LOGIN_KEY, new Date().toISOString());
-      await StorageService.set(this.AUTH_STATE_KEY, 'authenticated');
+    try {
+      const now = new Date().toISOString();
+      
+      const userSaved = await SQLiteStorageService.setObject(this.USER_KEY, user);
+      const authStateSaved = await SQLiteStorageService.set(this.AUTH_STATE_KEY, 'authenticated');
+      const lastLoginSaved = await SQLiteStorageService.set(this.LAST_LOGIN_KEY, now);
+      
+      if (userSaved && authStateSaved && lastLoginSaved) {
+        console.log(`✅ Usuario ${user.email} guardado`);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('💥 Error guardando usuario:', error);
+      return false;
     }
-    return success;
   }
   
-  // Obtener usuario guardado
   static async getUser(): Promise<User | null> {
-    return await StorageService.getObject<User>(this.USER_KEY);
+    return await SQLiteStorageService.getObject<User>(this.USER_KEY);
   }
 
-  // Verificar si hay usuario autenticado
   static async isUserAuthenticated(): Promise<boolean> {
     try {
-      const authState = await StorageService.get<string>(this.AUTH_STATE_KEY);
-      const user = await this.getUser();
+      const [authState, user] = await Promise.all([
+        SQLiteStorageService.get<string>(this.AUTH_STATE_KEY),
+        this.getUser()
+      ]);
       
-      console.log('🔍 Verificando autenticación:', { 
-        authState, 
-        hasUser: !!user 
-      });
+      const isAuth = authState === 'authenticated' && user !== null;
       
-      // Si hay usuario pero no hay authState, establecerlo
-      if (user && authState !== 'authenticated') {
-        console.log('🔧 Reparando estado de autenticación');
-        await StorageService.set(this.AUTH_STATE_KEY, 'authenticated');
-        return true;
-      }
-      
-      // ✅ NUEVO: Auto-refrescar sesión si está autenticado
-      if (authState === 'authenticated' && user !== null) {
+      if (isAuth) {
+        // Auto-refresh sesión
         await this.refreshSession();
-        return true;
       }
       
-      return authState === 'authenticated' && user !== null;
+      return isAuth;
     } catch (error) {
-      console.error('Error verificando autenticación:', error);
+      console.error('💥 Error verificando auth:', error);
       return false;
     }
   }
 
-  // Actualizar datos del usuario
   static async updateUser(updates: Partial<User>): Promise<boolean> {
-    return await StorageService.updateObject(this.USER_KEY, {
+    const updatedUser = {
       ...updates,
       metadata: {
         ...updates.metadata,
         updatedAt: new Date().toISOString()
       }
-    });
+    };
+    
+    return await SQLiteStorageService.updateObject(this.USER_KEY, updatedUser);
   }
 
-  // ==================== GESTIÓN DE SESIÓN ====================
+  // ==================== SESIÓN ====================
   
-  // Guardar método de login (email, google)
   static async saveLoginMethod(method: 'email' | 'google'): Promise<boolean> {
-    return await StorageService.set(this.LOGIN_METHOD_KEY, method);
+    return await SQLiteStorageService.set(this.LOGIN_METHOD_KEY, method);
   }
 
-  // Obtener método de login
   static async getLoginMethod(): Promise<'email' | 'google' | null> {
-    return await StorageService.get<'email' | 'google'>(this.LOGIN_METHOD_KEY);
+    return await SQLiteStorageService.get<'email' | 'google'>(this.LOGIN_METHOD_KEY);
   }
 
-  // Obtener fecha del último login
   static async getLastLogin(): Promise<Date | null> {
-    const lastLogin = await StorageService.get<string>(this.LAST_LOGIN_KEY);
+    const lastLogin = await SQLiteStorageService.get<string>(this.LAST_LOGIN_KEY);
     return lastLogin ? new Date(lastLogin) : null;
   }
 
-  // ✅ CAMBIO: Nunca expirar en ningún entorno
-  static async isSessionExpired(maxDaysValid: number = 365): Promise<boolean> {
-    console.log('🔧 Sesión configurada para nunca expirar');
-    
-    // ✅ Siempre refrescar la sesión cuando se verifica
-    await this.refreshSession();
-    
-    // ✅ Nunca expirar - solo verificar que exista lastLogin
+  static async isSessionExpired(maxDaysValid: number = 30): Promise<boolean> {
     const lastLogin = await this.getLastLogin();
-    if (!lastLogin) {
-      console.log('❌ No hay lastLogin almacenado');
-      return true;
-    }
+    if (!lastLogin) return true;
     
-    console.log(`✅ Sesión válida - último login: ${lastLogin.toLocaleString()}`);
-    return false; // Nunca expira
+    const daysSinceLogin = (Date.now() - lastLogin.getTime()) / (1000 * 60 * 60 * 24);
+    return daysSinceLogin > maxDaysValid;
   }
 
-  // ✅ MEJORADO: Método para refrescar sesión
   static async refreshSession(): Promise<boolean> {
-    try {
-      const now = new Date().toISOString();
-      await StorageService.set(this.LAST_LOGIN_KEY, now);
-      console.log(`🔄 Sesión refrescada: ${new Date(now).toLocaleString()}`);
-      return true;
-    } catch (error) {
-      console.error('Error refrescando sesión:', error);
-      return false;
-    }
-  }
-
-  // ✅ NUEVO: Auto-refrescar cada vez que la app se inicia
-  static async autoRefreshOnAppStart(): Promise<void> {
-    try {
-      const user = await this.getUser();
-      const authState = await StorageService.get<string>(this.AUTH_STATE_KEY);
-      
-      if (user && authState === 'authenticated') {
-        await this.refreshSession();
-        console.log('🚀 Auto-refresh completado al iniciar app');
-      }
-    } catch (error) {
-      console.error('Error en auto-refresh:', error);
-    }
+    const now = new Date().toISOString();
+    return await SQLiteStorageService.set(this.LAST_LOGIN_KEY, now);
   }
 
   // ==================== LIMPIEZA ====================
   
-  // Limpiar datos de autenticación (logout)
   static async clearAuthData(): Promise<boolean> {
     const keys = [
       this.USER_KEY,
@@ -146,46 +111,39 @@ export class AuthStorageService {
       this.LOGIN_METHOD_KEY
     ];
     
-    const results = await Promise.all([
-      StorageService.removeMultiple(keys)
+    const success = await SQLiteStorageService.removeMultiple(keys);
+    
+    if (success) {
+      console.log('🧹 Datos de auth limpiados');
+    }
+    
+    return success;
+  }
+
+  static async cleanupOrRefresh(): Promise<boolean> {
+    const [user, authState] = await Promise.all([
+      this.getUser(),
+      SQLiteStorageService.get<string>(this.AUTH_STATE_KEY)
     ]);
     
-    return results.every(result => result);
-  }
-
-  // ✅ MODIFICADO: Solo refrescar, nunca limpiar por expiración
-  static async cleanupOrRefresh(): Promise<boolean> {
-    const user = await this.getUser();
-    const authState = await StorageService.get<string>(this.AUTH_STATE_KEY);
-    
-    // Solo limpiar si realmente no hay datos válidos
-    if (!user || authState !== 'authenticated') {
-      console.log('🧹 No hay datos de usuario válidos, limpiando...');
-      return await this.clearAuthData();
-    } else {
-      console.log('🔄 Datos válidos encontrados, refrescando sesión...');
-      return await this.refreshSession();
-    }
-  }
-
-  // ✅ NUEVO: Verificar y mantener sesión activa
-  static async keepSessionAlive(): Promise<boolean> {
-    try {
-      const isAuth = await this.isUserAuthenticated();
-      if (isAuth) {
-        await this.refreshSession();
-        return true;
+    if (user && authState === 'authenticated') {
+      const isExpired = await this.isSessionExpired();
+      
+      if (!isExpired) {
+        console.log('🔄 Refrescando sesión válida');
+        return await this.refreshSession();
+      } else {
+        console.log('⏰ Sesión expirada, limpiando');
+        return await this.clearAuthData();
       }
-      return false;
-    } catch (error) {
-      console.error('Error manteniendo sesión activa:', error);
-      return false;
+    } else {
+      console.log('🧹 Datos inconsistentes, limpiando');
+      return await this.clearAuthData();
     }
   }
 
-  // ==================== UTILIDADES ====================
+  // ==================== INFO ====================
   
-  // Obtener información de la sesión
   static async getSessionInfo(): Promise<{
     isAuthenticated: boolean;
     user: User | null;
@@ -200,8 +158,7 @@ export class AuthStorageService {
       this.getLoginMethod()
     ]);
 
-    // ✅ Siempre false porque nunca expira
-    const sessionExpired = false;
+    const sessionExpired = await this.isSessionExpired();
 
     return {
       isAuthenticated,
@@ -210,22 +167,5 @@ export class AuthStorageService {
       loginMethod,
       sessionExpired
     };
-  }
-
-  // Hacer backup de datos de auth
-  static async backupAuthData(): Promise<Record<string, any> | null> {
-    const keys = [
-      this.USER_KEY,
-      this.AUTH_STATE_KEY,
-      this.LAST_LOGIN_KEY,
-      this.LOGIN_METHOD_KEY
-    ];
-    
-    return await StorageService.getMultiple(keys);
-  }
-
-  // Restaurar datos de auth
-  static async restoreAuthData(backup: Record<string, any>): Promise<boolean> {
-    return await StorageService.setMultiple(backup);
   }
 }
