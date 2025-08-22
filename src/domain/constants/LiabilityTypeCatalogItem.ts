@@ -1,20 +1,11 @@
+import { LiabilityType } from "@/domain/types/LiabilityType";
+
 export interface LiabilityTypeCatalogItem {
   id: number;
   value: LiabilityType;
   label: string;
   description: string;
 }
-
-export type LiabilityType =
-  | "deudaPersonal"
-  | "deudaBancaria"
-  | "tarjetaCredito"
-  | "educativo"
-  | "hipoteca"
-  | "vehicular"
-  | "tributario"
-  | "comercial"
-  | "otros";
 
 export const liabilityTypeCatalog: LiabilityTypeCatalogItem[] = [
   {

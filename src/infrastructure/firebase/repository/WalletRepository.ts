@@ -36,7 +36,7 @@ export class WalletRepository implements IWalletRepository {
       const walletWithId: Wallet = {
         ...obj,
         id: walletId,
-        createdAt: new Date().toISOString(), // Asegurar fecha de creación
+        createdAt: new Date(), // Asegurar fecha de creación
       };
 
       await this.firestoreService.setDocument(

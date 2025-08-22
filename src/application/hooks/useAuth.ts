@@ -1,14 +1,14 @@
 // application/hooks/useAuth.ts
-import { container } from 'tsyringe';
-import { useState, useEffect, useCallback } from 'react';
-import { IAuthRepository } from '@/domain/repository/IAuthRepository';
-import { IWalletRepository } from '@/domain/interfaces/repository/IWalletRepository';
-import { IAuthStateRepository } from '@/domain/repository/IAuthStateRepository';
-import { User } from '@/domain/models/User';
-import { UserRegistrationVo } from '@/domain/valueObjects/UserRegistrationVo';
-import { AuthStorageService } from '@/infrastructure/storage/modules/AuthStorageService';
+import { container } from "tsyringe";
+import { useState, useEffect, useCallback } from "react";
+import { IAuthRepository } from "@/domain/repository/IAuthRepository";
+import { IWalletRepository } from "@/domain/interfaces/repository/IWalletRepository";
+import { IAuthStateRepository } from "@/domain/repository/IAuthStateRepository";
+import { User } from "@/domain/models/User";
+import { UserRegistrationVo } from "@/domain/valueObjects/UserRegistrationVo";
+import { AuthStorageService } from "@/infrastructure/storage/modules/AuthStorageService";
 
-import {Wallet} from "@/domain/entities/Wallet";
+import { Wallet } from "@/domain/entities/Wallet";
 
 class AuthManager {
   private static instance: AuthManager;
@@ -18,13 +18,13 @@ class AuthManager {
   private listeners: Set<() => void> = new Set();
   private isInitializing = false;
   private hasInitialized = false;
-  
+
   // ✅ NUEVO: Control de estabilidad
   private isStabilizing = false;
   private stabilizationTimeout: NodeJS.Timeout | null = null;
   private lastAuthChange = 0;
   private firebaseUnsubscribe: (() => void) | null = null;
-  
+
   public state = {
     user: null as User | null,
     loading: true,
@@ -33,10 +33,13 @@ class AuthManager {
   };
 
   private constructor() {
-    this.authRepository = container.resolve<IAuthRepository>('IAuthRepository');
-    this.authStateRepository = container.resolve<IAuthStateRepository>('IAuthStateRepository');
+    this.authRepository = container.resolve<IAuthRepository>("IAuthRepository");
+    this.authStateRepository = container.resolve<IAuthStateRepository>(
+      "IAuthStateRepository"
+    );
 
-    this.walletRepository = container.resolve<IWalletRepository>('IWalletRepository');
+    this.walletRepository =
+      container.resolve<IWalletRepository>("IWalletRepository");
   }
 
   static getInstance(): AuthManager {
@@ -48,11 +51,11 @@ class AuthManager {
 
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
-    
+
     if (!this.hasInitialized && !this.isInitializing) {
       this.initialize();
     }
-    
+
     return () => {
       this.listeners.delete(listener);
     };
@@ -61,7 +64,7 @@ class AuthManager {
   private notify() {
     // ✅ NUEVO: Solo notificar si no está estabilizando
     if (!this.isStabilizing) {
-      this.listeners.forEach(listener => listener());
+      this.listeners.forEach((listener) => listener());
     }
   }
 
@@ -71,7 +74,10 @@ class AuthManager {
   }
 
   // ✅ NUEVO: Actualización estable con debounce
-  private stableUpdateState(updates: Partial<typeof this.state>, delay: number = 300) {
+  private stableUpdateState(
+    updates: Partial<typeof this.state>,
+    delay: number = 300
+  ) {
     // Cancelar timeout anterior
     if (this.stabilizationTimeout) {
       clearTimeout(this.stabilizationTimeout);
@@ -79,7 +85,7 @@ class AuthManager {
 
     // Marcar como estabilizando
     this.isStabilizing = true;
-    
+
     // Aplicar cambios después del delay
     this.stabilizationTimeout = setTimeout(() => {
       this.state = { ...this.state, ...updates };
@@ -90,40 +96,45 @@ class AuthManager {
 
   private async initialize() {
     if (this.isInitializing || this.hasInitialized) return;
-    
+
     try {
       this.isInitializing = true;
-      console.log('🔄 Inicializando auth...');
-      
+      console.log("🔄 Inicializando auth...");
+
       // Inicializar SQLite
       await AuthStorageService.init();
-      
+
       // Verificar sesión local primero (más rápido)
       await AuthStorageService.cleanupOrRefresh();
       const sessionInfo = await AuthStorageService.getSessionInfo();
-      
-      if (sessionInfo.isAuthenticated && sessionInfo.user && !sessionInfo.sessionExpired) {
-        console.log('✅ Sesión local válida - estableciendo usuario inmediatamente');
-        
+
+      if (
+        sessionInfo.isAuthenticated &&
+        sessionInfo.user &&
+        !sessionInfo.sessionExpired
+      ) {
+        console.log(
+          "✅ Sesión local válida - estableciendo usuario inmediatamente"
+        );
+
         // ✅ CAMBIO: Establecer usuario inmediatamente sin esperas
         this.updateState({
           user: sessionInfo.user,
           loading: false,
           isInitialized: true,
         });
-        
+
         // ✅ NUEVO: Configurar Firebase listener DESPUÉS de establecer estado local
         setTimeout(() => this.setupFirebaseListener(true), 100);
-        
       } else {
-        console.log('❌ Sin sesión local válida');
+        console.log("❌ Sin sesión local válida");
         await AuthStorageService.clearAuthData();
-        
+
         // ✅ CAMBIO: Configurar Firebase listener inmediatamente
         this.setupFirebaseListener(false);
       }
     } catch (error) {
-      console.error('💥 Error inicializando:', error);
+      console.error("💥 Error inicializando:", error);
       await AuthStorageService.clearAuthData();
       this.setupFirebaseListener(false);
     } finally {
@@ -134,83 +145,89 @@ class AuthManager {
 
   // ✅ MEJORADO: Firebase listener con control de parpadeo
   private setupFirebaseListener(hasLocalSession: boolean) {
-    console.log('👂 Configurando Firebase listener...', { hasLocalSession });
-    
+    console.log("👂 Configurando Firebase listener...", { hasLocalSession });
+
     // Limpiar listener anterior si existe
     if (this.firebaseUnsubscribe) {
       this.firebaseUnsubscribe();
     }
-    
-    this.firebaseUnsubscribe = this.authStateRepository.onAuthStateChanged(async (userData) => {
-      const now = Date.now();
-      
-      // ✅ NUEVO: Evitar cambios muy frecuentes
-      if (now - this.lastAuthChange < 500) {
-        console.log('🚫 Cambio de auth ignorado - muy frecuente');
-        return;
-      }
-      this.lastAuthChange = now;
-      
-      console.log('🔥 Firebase auth cambió:', { hasUser: !!userData, userId: userData?.id });
-      
-      if (userData) {
-        // ✅ CAMBIO: Verificar si ya tenemos este usuario localmente
-        const currentUser = this.state.user;
-        if (currentUser && currentUser.id === userData.id) {
-          console.log('✅ Usuario ya establecido localmente - solo refrescando');
-          await AuthStorageService.refreshSession();
+
+    this.firebaseUnsubscribe = this.authStateRepository.onAuthStateChanged(
+      async (userData) => {
+        const now = Date.now();
+
+        // ✅ NUEVO: Evitar cambios muy frecuentes
+        if (now - this.lastAuthChange < 500) {
+          console.log("🚫 Cambio de auth ignorado - muy frecuente");
           return;
         }
-        
-        // Usuario nuevo o diferente
-        console.log('📱 Guardando usuario desde Firebase');
-        await AuthStorageService.saveUser(userData);
-        
-        // ✅ NUEVO: Si ya había sesión local, usar actualización estable
-        if (hasLocalSession && this.state.user) {
-          this.stableUpdateState({ user: userData }, 100);
+        this.lastAuthChange = now;
+
+        console.log("🔥 Firebase auth cambió:", {
+          hasUser: !!userData,
+          userId: userData?.id,
+        });
+
+        if (userData) {
+          // ✅ CAMBIO: Verificar si ya tenemos este usuario localmente
+          const currentUser = this.state.user;
+          if (currentUser && currentUser.id === userData.id) {
+            console.log(
+              "✅ Usuario ya establecido localmente - solo refrescando"
+            );
+            await AuthStorageService.refreshSession();
+            return;
+          }
+
+          // Usuario nuevo o diferente
+          console.log("📱 Guardando usuario desde Firebase");
+          await AuthStorageService.saveUser(userData);
+
+          // ✅ NUEVO: Si ya había sesión local, usar actualización estable
+          if (hasLocalSession && this.state.user) {
+            this.stableUpdateState({ user: userData }, 100);
+          } else {
+            this.updateState({ user: userData });
+          }
         } else {
-          this.updateState({ user: userData });
+          // Sin usuario en Firebase
+          console.log("🚪 Firebase sin usuario - limpiando");
+          await AuthStorageService.clearAuthData();
+
+          // ✅ NUEVO: Solo actualizar si realmente había un usuario
+          if (this.state.user) {
+            this.stableUpdateState({ user: null }, 200);
+          }
         }
-        
-      } else {
-        // Sin usuario en Firebase
-        console.log('🚪 Firebase sin usuario - limpiando');
-        await AuthStorageService.clearAuthData();
-        
-        // ✅ NUEVO: Solo actualizar si realmente había un usuario
-        if (this.state.user) {
-          this.stableUpdateState({ user: null }, 200);
+
+        // ✅ CAMBIO: Marcar como inicializado solo al final
+        if (!this.state.isInitialized) {
+          this.updateState({ loading: false, isInitialized: true });
         }
       }
-      
-      // ✅ CAMBIO: Marcar como inicializado solo al final
-      if (!this.state.isInitialized) {
-        this.updateState({ loading: false, isInitialized: true });
-      }
-    });
+    );
   }
 
   async register(userData: UserRegistrationVo) {
+    const objWallet: Wallet = {
+      name: "Billetera Principal",
+      description:
+        "Esta billetera concentra tus gastos y egresos, mostrando tu estado financiero actual en efectivo y cuentas bancarias.",
+      _idType: 1,
+      _idAssetType: 1,
+      balance: 0,
+      currency: "PEN",
+      isPrimary: true,
+      createdAt: new Date(),
+    };
+
     try {
       this.updateState({ loading: true, error: null });
       const newUser = await this.authRepository.register(userData);
+      await this.walletRepository.register(newUser.id, objWallet);
 
       await AuthStorageService.saveUser(newUser);
-      await AuthStorageService.saveLoginMethod('email');
-      
-      const objWallet: Wallet = {
-        name: "Billetera Principal",
-        description: "Esta billetera concentra tus gastos y egresos, mostrando tu estado financiero actual en efectivo y cuentas bancarias.",
-        _idType: 1,
-        _idAssetType: 1,
-        balance: 0,
-        currency: "PEN",
-        isPrimary: true,
-        createdAt: new Date()
-      }
-
-      await this.walletRepository.register(newUser.id, objWallet);
+      await AuthStorageService.saveLoginMethod("email");
 
       this.updateState({ user: newUser, loading: false });
     } catch (err: any) {
@@ -223,15 +240,15 @@ class AuthManager {
     try {
       this.updateState({ loading: true, error: null });
       const userData = await this.authRepository.login(email, password);
-      
+
       // ✅ CAMBIO: Guardar en SQLite primero, antes que Firebase notifique
       await AuthStorageService.saveUser(userData);
-      await AuthStorageService.saveLoginMethod('email');
-      
+      await AuthStorageService.saveLoginMethod("email");
+
       // ✅ NUEVO: Establecer usuario inmediatamente
       this.updateState({ user: userData, loading: false });
-      
-      console.log('✅ Login completado - usuario establecido');
+
+      console.log("✅ Login completado - usuario establecido");
     } catch (err: any) {
       this.updateState({ error: err.message, loading: false });
       throw err;
@@ -241,19 +258,19 @@ class AuthManager {
   async logout() {
     try {
       this.updateState({ loading: true });
-      
+
       // ✅ CAMBIO: Limpiar local primero
       await AuthStorageService.clearAuthData();
-      
+
       // ✅ NUEVO: Establecer estado inmediatamente
       this.updateState({ user: null, loading: false });
-      
+
       // Firebase logout en background
-      this.authRepository.logout().catch(err => {
-        console.warn('⚠️ Error en logout de Firebase:', err);
+      this.authRepository.logout().catch((err) => {
+        console.warn("⚠️ Error en logout de Firebase:", err);
       });
-      
-      console.log('🚪 Logout completado');
+
+      console.log("🚪 Logout completado");
     } catch (err: any) {
       this.updateState({ error: err.message, loading: false });
       await AuthStorageService.clearAuthData();
@@ -264,7 +281,7 @@ class AuthManager {
   async checkIsGoogleUser(): Promise<boolean> {
     try {
       const loginMethod = await AuthStorageService.getLoginMethod();
-      if (loginMethod === 'google') return true;
+      if (loginMethod === "google") return true;
       return await this.authRepository.isGoogleUser();
     } catch {
       return false;
@@ -318,10 +335,11 @@ export const useAuth = () => {
     isInitialized: authManager.state.isInitialized,
     isAuthenticated: !!authManager.state.user,
     register: (userData: UserRegistrationVo) => authManager.register(userData),
-    login: (email: string, password: string) => authManager.login(email, password),
+    login: (email: string, password: string) =>
+      authManager.login(email, password),
     logout: () => authManager.logout(),
     checkIsGoogleUser: () => authManager.checkIsGoogleUser(),
-    
+
     // ✅ NUEVO: Método de emergencia para estabilizar
     forceStabilize: () => authManager.forceStabilize(),
   };

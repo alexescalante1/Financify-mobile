@@ -1,24 +1,11 @@
+import { WalletType } from "@/domain/types/WalletType";
+
 export interface WalletTypeCatalogItem {
   id: number;
   value: WalletType;
   label: string;
   description: string;
 }
-
-export type WalletType =
-  | "billeteraEspecial"
-  | "cuentaBancaria"
-  | "cuentaSueldo"
-  | "cuentaAhorros"
-  | "cuentaCTS"
-  | "cuentaInversion"
-  | "fondoMutuo"
-  | "billeteraDigital"
-  | "billeteraCripto"
-  | "tarjetaDebito"
-  | "tarjetaCredito"
-  | "efectivo"
-  | "otro";
 
 export const walletTypeCatalog: WalletTypeCatalogItem[] = [
   {

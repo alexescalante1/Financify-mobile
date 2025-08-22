@@ -1,19 +1,11 @@
+import { PeriodType } from "@/domain/types/PeriodType";
+
 export interface PeriodCatalogItem {
   id: number;
-  value: Period;
+  value: PeriodType;
   label: string;
   description: string;
 }
-
-export type Period = 
-  | "diario"
-  | "semanal"
-  | "quincenal"
-  | "mensual"
-  | "bimestral"
-  | "trimestral"
-  | "semestral"
-  | "anual";
 
 export const periodCatalog: PeriodCatalogItem[] = [
   {

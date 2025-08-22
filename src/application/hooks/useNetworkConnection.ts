@@ -1,6 +1,6 @@
 // application/hooks/useNetworkConnection.ts
-import { useState, useEffect } from 'react';
-import NetInfo from '@react-native-community/netinfo';
+import { useState, useEffect } from "react";
+import NetInfo from "@react-native-community/netinfo";
 
 interface NetworkState {
   isConnected: boolean;
@@ -22,7 +22,7 @@ export const useNetworkConnection = () => {
 
     const unsubscribe = NetInfo.addEventListener(async (state) => {
       const realInternet = await validateInternetAccess();
-      console.log('🌐 Estado de red:', {
+      console.log("🌐 Estado de red:", {
         connected: state.isConnected,
         reachable: state.isInternetReachable,
         type: state.type,
@@ -51,8 +51,12 @@ export const useNetworkConnection = () => {
         hasRealInternetAccess: realInternet,
       });
     } catch (error) {
-      console.error('Error verificando conexión inicial:', error);
-      setNetworkState(prev => ({ ...prev, isConnected: true, hasRealInternetAccess: false }));
+      console.error("Error verificando conexión inicial:", error);
+      setNetworkState((prev) => ({
+        ...prev,
+        isConnected: true,
+        hasRealInternetAccess: false,
+      }));
     }
   };
 
@@ -68,7 +72,7 @@ export const useNetworkConnection = () => {
       });
       return realInternet;
     } catch (error) {
-      console.error('Error verificando conexión:', error);
+      console.error("Error verificando conexión:", error);
       return false;
     }
   };
@@ -76,9 +80,9 @@ export const useNetworkConnection = () => {
   // Validación adicional con fetch real
   const validateInternetAccess = async (): Promise<boolean> => {
     try {
-      const response = await fetch('https://clients3.google.com/generate_204', {
-        method: 'GET',
-        cache: 'no-cache',
+      const response = await fetch("https://clients3.google.com/generate_204", {
+        method: "GET",
+        cache: "no-cache",
       });
       return response.status === 204;
     } catch (error) {

@@ -1,6 +1,5 @@
 import { container } from "tsyringe";
 import { useState, useEffect, useCallback } from "react";
-import { Unsubscribe } from "firebase/firestore";
 
 import { useAuth } from "@/application/hooks/useAuth";
 import { Wallet } from "@/domain/entities/Wallet";
@@ -449,7 +448,7 @@ export const useCreateWallet = () => {
 
     setLoading(true);
     setError(null);
-
+    
     try {
       console.log(`📝 Creating wallet "${walletData.name}" for user ${user.id}`);
       
