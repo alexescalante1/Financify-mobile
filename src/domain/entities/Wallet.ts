@@ -1,15 +1,16 @@
-// Representa una billetera o cuenta bancaria que almacena dinero del usuario
+import { CurrencyType } from "@/domain/types/CurrencyType";
 
+// Representa una billetera o cuenta bancaria que almacena dinero del usuario
 export interface Wallet {
   id?: number;
   name: string;
   description: string;
-  type: string;
-  assetTypeId: string;
+  _idType: number;
+  _idAssetType: number;
   balance: number;
-  currency: string;
+  currency: CurrencyType;
+  createdAt: Date;
   isPrimary: boolean;
-  createdAt: string;
 }
 
 /*

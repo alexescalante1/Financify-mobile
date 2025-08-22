@@ -110,7 +110,7 @@ const WalletCard: React.FC<WalletCardProps> = ({
             
             <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
               <Text variant="bodySmall" style={{ marginRight: 12 }}>
-                Tipo: {wallet.type}
+                Tipo: {wallet._idType}
               </Text>
               <Chip mode="outlined" textStyle={{ fontSize: 10 }}>
                 {wallet.currency}
@@ -183,8 +183,8 @@ const EditWalletModal: React.FC<EditWalletModalProps> = ({
   const [formData, setFormData] = useState<WalletFormData>({
     name: wallet?.name || "",
     description: wallet?.description || "",
-    type: wallet?.type || "digital",
-    assetTypeId: wallet?.assetTypeId || "",
+    type: wallet?._idType || "digital",
+    assetTypeId: wallet?._idAssetType || "",
     balance: wallet?.balance?.toString() || "0",
     currency: wallet?.currency || "USD",
     isPrimary: wallet?.isPrimary || false,
@@ -242,8 +242,8 @@ const EditWalletModal: React.FC<EditWalletModalProps> = ({
       setFormData({
         name: wallet?.name || "",
         description: wallet?.description || "",
-        type: wallet?.type || "digital",
-        assetTypeId: wallet?.assetTypeId || "",
+        type: wallet?._idType || "digital",
+        assetTypeId: wallet?._idAssetType || "",
         balance: wallet?.balance?.toString() || "0",
         currency: wallet?.currency || "USD",
         isPrimary: wallet?.isPrimary || false,

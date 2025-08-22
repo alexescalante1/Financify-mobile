@@ -2,14 +2,18 @@
 import { container } from 'tsyringe';
 import { useState, useEffect, useCallback } from 'react';
 import { IAuthRepository } from '@/domain/repository/IAuthRepository';
+import { IWalletRepository } from '@/domain/interfaces/repository/IWalletRepository';
 import { IAuthStateRepository } from '@/domain/repository/IAuthStateRepository';
 import { User } from '@/domain/models/User';
 import { UserRegistrationVo } from '@/domain/valueObjects/UserRegistrationVo';
 import { AuthStorageService } from '@/infrastructure/storage/modules/AuthStorageService';
 
+import {Wallet} from "@/domain/entities/Wallet";
+
 class AuthManager {
   private static instance: AuthManager;
   private authRepository: IAuthRepository;
+  private walletRepository: IWalletRepository;
   private authStateRepository: IAuthStateRepository;
   private listeners: Set<() => void> = new Set();
   private isInitializing = false;
@@ -31,6 +35,8 @@ class AuthManager {
   private constructor() {
     this.authRepository = container.resolve<IAuthRepository>('IAuthRepository');
     this.authStateRepository = container.resolve<IAuthStateRepository>('IAuthStateRepository');
+
+    this.walletRepository = container.resolve<IWalletRepository>('IWalletRepository');
   }
 
   static getInstance(): AuthManager {
@@ -189,10 +195,23 @@ class AuthManager {
     try {
       this.updateState({ loading: true, error: null });
       const newUser = await this.authRepository.register(userData);
-      
+
       await AuthStorageService.saveUser(newUser);
       await AuthStorageService.saveLoginMethod('email');
       
+      const objWallet: Wallet = {
+        name: "Billetera Principal",
+        description: "Esta billetera concentra tus gastos y egresos, mostrando tu estado financiero actual en efectivo y cuentas bancarias.",
+        _idType: 1,
+        _idAssetType: 1,
+        balance: 0,
+        currency: "PEN",
+        isPrimary: true,
+        createdAt: new Date()
+      }
+
+      await this.walletRepository.register(newUser.id, objWallet);
+
       this.updateState({ user: newUser, loading: false });
     } catch (err: any) {
       this.updateState({ error: err.message, loading: false });

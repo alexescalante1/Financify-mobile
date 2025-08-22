@@ -1,10 +1,14 @@
+import { CurrencyType } from "@/domain/types/CurrencyType";
+import { GenderType } from "@/domain/types/GenderType";
+import { StatusType } from "@/domain/types/StatusType";
+
 export interface User {
   id: string;
   email: string;
   fullName: string;
-  gender: 'masculino' | 'femenino';
+  gender: GenderType;
   birthDate: string; // ISO string format
-  currency: string;
+  currency: CurrencyType;
   language: string;
   country: {
     code: string;
@@ -18,5 +22,5 @@ export interface User {
     createdAt: string; // ISO string format
     updatedAt: string; // ISO string format
   };
-  status: 'active' | 'inactive' | 'suspended';
+  status: StatusType;
 }
