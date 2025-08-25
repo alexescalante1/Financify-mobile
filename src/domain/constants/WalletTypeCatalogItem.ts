@@ -96,3 +96,4 @@ export const walletTypeCatalog: WalletTypeCatalogItem[] = [
       "Otro tipo de cuenta o billetera no clasificada anteriormente.",
   },
 ];
+

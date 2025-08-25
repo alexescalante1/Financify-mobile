@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import {
   Text,
   TextInput,
@@ -9,11 +9,14 @@ import {
   HelperText,
   useTheme,
   Divider,
+  Chip,
+  IconButton,
 } from 'react-native-paper';
 import { useForm, Controller } from 'react-hook-form';
 import { SmoothPopupFullScreen } from '@/presentation/components/common/screen/SmoothPopupFullScreen';
-import { SimpleCard } from '@/presentation/components/common/card/SimpleCard'; // Importar el componente
+import { SimpleCard } from '@/presentation/components/common/card/SimpleCard';
 
+// ============= TYPES =============
 interface RegularizeBalanceModalProps {
   visible: boolean;
   onDismiss: () => void;
@@ -27,6 +30,33 @@ interface RegularizeFormData {
   description: string;
 }
 
+interface DifferenceData {
+  difference: number;
+  absoluteDifference: number;
+  type: 'income' | 'expense' | 'none';
+  hasChange: boolean;
+}
+
+// ============= CONSTANTS =============
+const QUICK_ADJUSTMENTS = [-100, -50, -10, 0, 10, 50, 100];
+
+const VALIDATION_RULES = {
+  MIN_BALANCE: -999999.99,
+  MAX_BALANCE: 999999.99,
+  MAX_DESCRIPTION: 100,
+  DECIMAL_REGEX: /^-?\d+(\.\d{1,2})?$/,
+};
+
+const DESCRIPTION_SUGGESTIONS = [
+  "Efectivo en billetera",
+  "Dinero encontrado",
+  "Gasto no registrado", 
+  "Transferencia externa",
+  "Ajuste de saldo",
+  "Corrección de error"
+];
+
+// ============= COMPONENT =============
 export const RegularizeBalanceModal: React.FC<RegularizeBalanceModalProps> = ({ 
   visible, 
   onDismiss, 
@@ -41,10 +71,12 @@ export const RegularizeBalanceModal: React.FC<RegularizeBalanceModalProps> = ({
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
     reset,
     watch,
+    setValue,
   } = useForm<RegularizeFormData>({
+    mode: 'onChange',
     defaultValues: {
       targetBalance: currentBalance.toFixed(2),
       description: '',
@@ -52,26 +84,121 @@ export const RegularizeBalanceModal: React.FC<RegularizeBalanceModalProps> = ({
   });
 
   const targetBalanceValue = watch('targetBalance');
-  
-  // Calcular la diferencia y el tipo de ajuste
-  const calculateDifference = () => {
+
+  // ============= STYLES =============
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 16,
+      paddingBottom: 40,
+    },
+    section: {
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      marginBottom: 12,
+      color: theme.colors.onSurfaceVariant,
+      fontWeight: '600',
+    },
+    balanceDisplay: {
+      alignItems: 'center',
+      padding: 24,
+    },
+    currentBalance: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: currentBalance >= 0 ? theme.colors.primary : theme.colors.error,
+    },
+    adjustmentContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginTop: 12,
+    },
+    suggestionsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginTop: 12,
+    },
+    differenceCard: {
+      padding: 20,
+      alignItems: 'center',
+    },
+    differenceAmount: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      marginBottom: 8,
+    },
+    warningCard: {
+      padding: 16,
+      alignItems: 'center',
+    },
+    footer: {
+      flexDirection: 'row',
+      gap: 12,
+      padding: 16,
+      paddingTop: 12,
+      backgroundColor: theme.colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.outline + '20',
+    },
+  });
+
+  // ============= UTILITY FUNCTIONS =============
+  const calculateDifference = (): DifferenceData => {
     const target = parseFloat(targetBalanceValue || '0');
     const difference = target - currentBalance;
     return {
       difference,
       absoluteDifference: Math.abs(difference),
       type: difference > 0 ? 'income' : difference < 0 ? 'expense' : 'none',
-      hasChange: difference !== 0
+      hasChange: Math.abs(difference) > 0.01 // Allow for floating point precision
     };
   };
-
-  const diffData = calculateDifference();
 
   const showSnackbar = (message: string) => {
     setSnackbarMessage(message);
     setSnackbarVisible(true);
   };
 
+  const validateTargetBalance = (value: string) => {
+    if (!value?.trim()) {
+      return 'El balance objetivo es requerido';
+    }
+    
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) {
+      return 'Ingresa un balance válido';
+    }
+    
+    if (numValue < VALIDATION_RULES.MIN_BALANCE || numValue > VALIDATION_RULES.MAX_BALANCE) {
+      return 'El balance está fuera del rango permitido';
+    }
+    
+    return true;
+  };
+
+  const cleanBalanceInput = (text: string): string => {
+    return text.replace(/[^0-9.-]/g, '').replace(/(?!^)-/g, '');
+  };
+
+  const handleQuickAdjustment = (adjustment: number) => {
+    const newBalance = currentBalance + adjustment;
+    setValue('targetBalance', newBalance.toFixed(2), { shouldValidate: true });
+  };
+
+  const handleDescriptionSuggestion = (suggestion: string) => {
+    setValue('description', suggestion);
+  };
+
+  const resetToCurrentBalance = () => {
+    setValue('targetBalance', currentBalance.toFixed(2), { shouldValidate: true });
+  };
+
+  // ============= EVENT HANDLERS =============
   const onSubmit = async (data: RegularizeFormData) => {
     try {
       const targetBalance = parseFloat(data.targetBalance);
@@ -81,14 +208,15 @@ export const RegularizeBalanceModal: React.FC<RegularizeBalanceModalProps> = ({
         return;
       }
 
+      const diffData = calculateDifference();
       if (!diffData.hasChange) {
-        showSnackbar('No hay diferencia en el balance');
+        showSnackbar('No hay diferencia significativa en el balance');
         return;
       }
 
       await onRegularize(targetBalance, data.description || undefined);
       
-      showSnackbar('¡Balance regularizado correctamente!');
+      showSnackbar('Balance regularizado correctamente');
       
       setTimeout(() => {
         reset();
@@ -108,23 +236,9 @@ export const RegularizeBalanceModal: React.FC<RegularizeBalanceModalProps> = ({
     }
   };
 
-  const validateTargetBalance = (value: string) => {
-    if (!value || value.trim() === '') {
-      return 'El balance objetivo es requerido';
-    }
-    
-    const numValue = parseFloat(value);
-    if (isNaN(numValue)) {
-      return 'Ingresa un balance válido';
-    }
-    
-    if (numValue < -999999.99 || numValue > 999999.99) {
-      return 'El balance está fuera del rango permitido';
-    }
-    
-    return true;
-  };
+  const diffData = calculateDifference();
 
+  // ============= RENDER =============
   return (
     <>
       <SmoothPopupFullScreen
@@ -133,73 +247,60 @@ export const RegularizeBalanceModal: React.FC<RegularizeBalanceModalProps> = ({
         backgroundColor={theme.colors.surface}
         title="REGULARIZAR BALANCE"
       >
-        <ScrollView 
-          style={{ flex: 1 }}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ 
-            padding: 5,
-            paddingBottom: 40
-          }}
-        >
-          {/* Balance actual */}
-          <SimpleCard
-            shadowIntensity="medium"
-            style={{
-              marginBottom: 20,
-              backgroundColor: theme.colors.surfaceVariant,
-            }}
+        <View style={styles.container}>
+          <ScrollView 
+            style={{ flex: 1 }}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
           >
-            <Card.Content style={{ padding: 24 }}>
-              <View style={{ alignItems: 'center' }}>
-                <Text 
-                  variant="bodyMedium" 
-                  style={{ 
-                    color: theme.colors.onSurfaceVariant,
-                    marginBottom: 8,
-                  }}
-                >
-                  Balance Actual
-                </Text>
-                <Text variant="headlineMedium" style={{ 
-                  color: currentBalance >= 0 ? "#4CAF50" : "#F44336",
-                  fontWeight: 'bold',
-                }}>
-                  S/ {currentBalance.toFixed(2)}
-                </Text>
-              </View>
-            </Card.Content>
-          </SimpleCard>
+            {/* Balance actual */}
+            <View style={styles.section}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Balance actual
+              </Text>
+              <SimpleCard shadowIntensity="medium">
+                <View style={styles.balanceDisplay}>
+                  <Text 
+                    variant="bodyLarge" 
+                    style={{ 
+                      color: theme.colors.onSurfaceVariant,
+                      marginBottom: 8,
+                    }}
+                  >
+                    Tu saldo registrado
+                  </Text>
+                  <Text style={styles.currentBalance}>
+                    S/ {currentBalance.toFixed(2)}
+                  </Text>
+                </View>
+              </SimpleCard>
+            </View>
 
-          {/* Formulario principal */}
-          <SimpleCard
-            shadowIntensity="medium"
-            style={{
-              marginBottom: 20,
-              backgroundColor: theme.colors.surfaceVariant,
-            }}
-          >
-            <Card.Content style={{ padding: 24 }}>
-              {/* Balance objetivo */}
+            {/* Balance objetivo */}
+            <View style={styles.section}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Balance objetivo
+              </Text>
               <Controller
                 control={control}
                 name="targetBalance"
-                rules={{
-                  validate: validateTargetBalance
-                }}
+                rules={{ validate: validateTargetBalance }}
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <View style={{ marginBottom: 24 }}>
+                  <>
                     <TextInput
-                      label="Balance Objetivo (S/)"
+                      label="Nuevo balance (S/)"
                       value={value}
-                      onChangeText={(text) => {
-                        // Permitir números negativos y decimales
-                        const cleanText = text.replace(/[^0-9.-]/g, '');
-                        onChange(cleanText);
-                      }}
+                      onChangeText={(text) => onChange(cleanBalanceInput(text))}
                       onBlur={onBlur}
                       mode="outlined"
                       keyboardType="numeric"
                       left={<TextInput.Icon icon="target" />}
+                      right={
+                        <TextInput.Icon 
+                          icon="refresh" 
+                          onPress={resetToCurrentBalance}
+                        />
+                      }
                       error={!!errors.targetBalance}
                       placeholder="0.00"
                       disabled={loading}
@@ -207,123 +308,114 @@ export const RegularizeBalanceModal: React.FC<RegularizeBalanceModalProps> = ({
                     <HelperText type="error" visible={!!errors.targetBalance}>
                       {errors.targetBalance?.message}
                     </HelperText>
-                  </View>
+                  </>
                 )}
               />
 
-              {/* Descripción opcional */}
-              <Controller
-                control={control}
-                name="description"
-                rules={{
-                  maxLength: {
-                    value: 100,
-                    message: 'La descripción no puede exceder 100 caracteres'
-                  }
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <View>
-                    <TextInput
-                      label="Motivo de la regularización (opcional)"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
+              {/* Ajustes rápidos */}
+              <View>
+                <Text
+                  variant="bodyMedium"
+                  style={{
+                    color: theme.colors.onSurfaceVariant,
+                    marginBottom: 8,
+                    marginTop: 8,
+                  }}
+                >
+                  Ajustes rápidos
+                </Text>
+                <View style={styles.adjustmentContainer}>
+                  {QUICK_ADJUSTMENTS.map((adjustment) => (
+                    <Chip
+                      key={adjustment}
                       mode="outlined"
-                      left={<TextInput.Icon icon="text" />}
-                      placeholder="Ej: Ajuste por efectivo en billetera"
+                      onPress={() => handleQuickAdjustment(adjustment)}
                       disabled={loading}
-                      multiline
-                      numberOfLines={2}
-                    />
-                    <HelperText type="error" visible={!!errors.description}>
-                      {errors.description?.message}
-                    </HelperText>
-                    <HelperText type="info" visible={!!value}>
-                      {value?.length || 0}/100 caracteres
-                    </HelperText>
-                  </View>
-                )}
-              />
-            </Card.Content>
-          </SimpleCard>
+                      compact
+                      icon={adjustment > 0 ? "plus" : adjustment < 0 ? "minus" : "equal"}
+                    >
+                      {adjustment === 0 ? "Reset" : `${adjustment > 0 ? '+' : ''}S/ ${adjustment}`}
+                    </Chip>
+                  ))}
+                </View>
+              </View>
+            </View>
 
-          {/* Mostrar cálculo de diferencia */}
-          {diffData.hasChange && (
-            <SimpleCard
-              shadowIntensity="strong"
-              style={{
-                marginBottom: 20,
-                backgroundColor: diffData.type === 'income' 
-                  ? theme.colors.primaryContainer 
-                  : theme.colors.errorContainer,
-              }}
-            >
-              <Card.Content style={{ padding: 24 }}>
-                <View style={{ alignItems: 'center' }}>
-                  <Text 
-                    variant="bodyMedium" 
-                    style={{ 
+            {/* Vista previa del cambio */}
+            {diffData.hasChange && (
+              <View style={styles.section}>
+                <Text variant="titleMedium" style={styles.sectionTitle}>
+                  Vista previa del ajuste
+                </Text>
+                <SimpleCard
+                  shadowIntensity="strong"
+                  style={{
+                    backgroundColor: diffData.type === 'income' 
+                      ? theme.colors.primaryContainer 
+                      : theme.colors.errorContainer,
+                  }}
+                >
+                  <View style={styles.differenceCard}>
+                    <Text 
+                      variant="bodyLarge" 
+                      style={{ 
+                        color: diffData.type === 'income' 
+                          ? theme.colors.onPrimaryContainer 
+                          : theme.colors.onErrorContainer,
+                        marginBottom: 8,
+                        fontWeight: '600'
+                      }}
+                    >
+                      {diffData.type === 'income' ? 'Se registrará un ingreso de:' : 'Se registrará un gasto de:'}
+                    </Text>
+                    <Text style={[
+                      styles.differenceAmount,
+                      { 
+                        color: diffData.type === 'income' 
+                          ? theme.colors.onPrimaryContainer 
+                          : theme.colors.onErrorContainer,
+                      }
+                    ]}>
+                      {diffData.type === 'income' ? '+' : '-'}S/ {diffData.absoluteDifference.toFixed(2)}
+                    </Text>
+                    
+                    <Divider style={{ 
+                      width: '100%', 
+                      marginVertical: 12,
+                      backgroundColor: diffData.type === 'income' 
+                        ? theme.colors.onPrimaryContainer 
+                        : theme.colors.onErrorContainer,
+                      opacity: 0.3,
+                    }} />
+                    
+                    <Text variant="bodyMedium" style={{ 
                       color: diffData.type === 'income' 
                         ? theme.colors.onPrimaryContainer 
                         : theme.colors.onErrorContainer,
-                      marginBottom: 8,
-                      fontWeight: '500'
-                    }}
-                  >
-                    {diffData.type === 'income' ? 'Se registrará un INGRESO de:' : 'Se registrará un GASTO de:'}
-                  </Text>
-                  <Text variant="headlineSmall" style={{ 
-                    color: diffData.type === 'income' 
-                      ? theme.colors.onPrimaryContainer 
-                      : theme.colors.onErrorContainer,
-                    fontWeight: 'bold',
-                    marginBottom: 8,
-                  }}>
-                    {diffData.type === 'income' ? '+' : '-'}S/ {diffData.absoluteDifference.toFixed(2)}
-                  </Text>
-                  
-                  <Divider style={{ 
-                    width: '100%', 
-                    marginVertical: 12,
-                    backgroundColor: diffData.type === 'income' 
-                      ? theme.colors.onPrimaryContainer 
-                      : theme.colors.onErrorContainer,
-                    opacity: 0.3,
-                  }} />
-                  
-                  <Text variant="bodySmall" style={{ 
-                    color: diffData.type === 'income' 
-                      ? theme.colors.onPrimaryContainer 
-                      : theme.colors.onErrorContainer,
-                    textAlign: 'center',
-                    opacity: 0.8,
-                  }}>
-                    {diffData.type === 'income' 
-                      ? '💰 Tu balance aumentará a S/ ' + parseFloat(targetBalanceValue || '0').toFixed(2)
-                      : '💸 Tu balance disminuirá a S/ ' + parseFloat(targetBalanceValue || '0').toFixed(2)
-                    }
-                  </Text>
-                </View>
-              </Card.Content>
-            </SimpleCard>
-          )}
+                      textAlign: 'center',
+                    }}>
+                      Nuevo balance: S/ {parseFloat(targetBalanceValue || '0').toFixed(2)}
+                    </Text>
+                  </View>
+                </SimpleCard>
+              </View>
+            )}
 
-          {!diffData.hasChange && targetBalanceValue && (
-            <SimpleCard
-              shadowIntensity="light"
-              style={{
-                marginBottom: 20,
-                backgroundColor: theme.colors.secondaryContainer,
-              }}
-            >
-              <Card.Content style={{ padding: 20 }}>
-                <View style={{ alignItems: 'center' }}>
-                  <Text variant="bodyMedium" style={{ 
+            {!diffData.hasChange && targetBalanceValue && (
+              <SimpleCard
+                shadowIntensity="light"
+                style={{
+                  backgroundColor: theme.colors.secondaryContainer,
+                  marginBottom: 20,
+                }}
+              >
+                <View style={styles.warningCard}>
+                  <Text variant="bodyLarge" style={{ 
                     color: theme.colors.onSecondaryContainer,
                     textAlign: 'center',
                     fontWeight: '500'
                   }}>
-                    ⚠️ No hay diferencia en el balance
+                    No hay cambios en el balance
                   </Text>
                   <Text variant="bodySmall" style={{ 
                     color: theme.colors.onSecondaryContainer,
@@ -334,34 +426,109 @@ export const RegularizeBalanceModal: React.FC<RegularizeBalanceModalProps> = ({
                     El balance objetivo es igual al actual
                   </Text>
                 </View>
-              </Card.Content>
-            </SimpleCard>
-          )}
-        </ScrollView>
+              </SimpleCard>
+            )}
 
-        {/* Footer fijo con botones */}
-        <View style={{ 
-          flexDirection: 'row', 
-          gap: 12,
-        }}>
-          <Button 
-            mode="outlined" 
-            onPress={handleDismiss}
-            style={{ flex: 1 }}
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-          <Button 
-            mode="contained" 
-            onPress={handleSubmit(onSubmit)}
-            loading={loading}
-            disabled={loading || !diffData.hasChange}
-            style={{ flex: 1 }}
-            buttonColor={diffData.type === 'income' ? theme.colors.primary : theme.colors.error}
-          >
-            {loading ? 'Regularizando...' : 'Regularizar'}
-          </Button>
+            <Divider style={{ marginVertical: 8 }} />
+
+            {/* Descripción */}
+            <View style={styles.section}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Motivo del ajuste
+              </Text>
+              <Controller
+                control={control}
+                name="description"
+                rules={{
+                  maxLength: {
+                    value: VALIDATION_RULES.MAX_DESCRIPTION,
+                    message: `La descripción no puede exceder ${VALIDATION_RULES.MAX_DESCRIPTION} caracteres`
+                  }
+                }}
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <>
+                    <TextInput
+                      label="Descripción (opcional)"
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      mode="outlined"
+                      left={<TextInput.Icon icon="text" />}
+                      right={
+                        value ? (
+                          <TextInput.Icon 
+                            icon="close" 
+                            onPress={() => onChange("")}
+                          />
+                        ) : undefined
+                      }
+                      placeholder="Ej: Ajuste por efectivo en billetera"
+                      disabled={loading}
+                      multiline
+                      numberOfLines={2}
+                    />
+                    <HelperText type="error" visible={!!errors.description}>
+                      {errors.description?.message}
+                    </HelperText>
+                    <HelperText type="info" visible={!!value}>
+                      {value?.length || 0}/{VALIDATION_RULES.MAX_DESCRIPTION} caracteres
+                    </HelperText>
+                  </>
+                )}
+              />
+
+              {/* Sugerencias */}
+              <View>
+                <Text
+                  variant="bodyMedium"
+                  style={{
+                    color: theme.colors.onSurfaceVariant,
+                    marginBottom: 8,
+                    marginTop: 8,
+                  }}
+                >
+                  Sugerencias
+                </Text>
+                <View style={styles.suggestionsContainer}>
+                  {DESCRIPTION_SUGGESTIONS.map((suggestion) => (
+                    <Chip
+                      key={suggestion}
+                      mode="outlined"
+                      onPress={() => handleDescriptionSuggestion(suggestion)}
+                      disabled={loading}
+                      compact
+                    >
+                      {suggestion}
+                    </Chip>
+                  ))}
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Button 
+              mode="outlined" 
+              onPress={handleDismiss}
+              style={{ flex: 1 }}
+              disabled={loading}
+              icon="close"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              mode="contained" 
+              onPress={handleSubmit(onSubmit)}
+              loading={loading}
+              disabled={loading || !diffData.hasChange || !isValid}
+              style={{ flex: 1 }}
+              buttonColor={diffData.type === 'income' ? theme.colors.primary : theme.colors.error}
+              icon={diffData.type === 'income' ? "plus" : "minus"}
+            >
+              {loading ? 'Regularizando...' : 'Regularizar'}
+            </Button>
+          </View>
         </View>
       </SmoothPopupFullScreen>
 
@@ -373,8 +540,19 @@ export const RegularizeBalanceModal: React.FC<RegularizeBalanceModalProps> = ({
           label: 'OK',
           onPress: () => setSnackbarVisible(false),
         }}
+        style={{
+          backgroundColor: diffData.type === 'income' 
+            ? theme.colors.primaryContainer 
+            : theme.colors.errorContainer,
+        }}
       >
-        {snackbarMessage}
+        <Text style={{
+          color: diffData.type === 'income' 
+            ? theme.colors.onPrimaryContainer 
+            : theme.colors.onErrorContainer,
+        }}>
+          {snackbarMessage}
+        </Text>
       </Snackbar>
     </>
   );

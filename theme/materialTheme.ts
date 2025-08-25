@@ -1,163 +1,192 @@
-import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
+// theme.ts
+import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from 'react-native-paper';
 
-// Paleta de colores financieros BONITOS y elegantes
-const financialColorsPastel = {
-  // Celeste elegante balanceado (confianza, serenidad)
-  celesteMain: '#42A5F5',       // Celeste elegante - balance perfecto
-  celesteLight: '#E3F2FD',      // Celeste muy claro
-  celesteDark: '#1E88E5',       // Celeste más definido
-  
-  // Verde success más tradicional (ganancias, positivo)
-  successGreen: '#4CAF50',      // Verde success clásico
-  successGreenLight: '#C8E6C9', // Verde success claro
-  successGreenDark: '#388E3C',  // Verde success oscuro
-  
-  // Coral suave bonito (pérdidas, advertencias)
-  coralSoft: '#FF7043',         // Coral suave hermoso
-  coralLight: '#FFCCBC',        // Coral muy claro
-  coralDark: '#D84315',         // Coral más intenso
-  
-  // Lavanda bonita (premium, elegancia)
-  lavender: '#BA68C8',          // Lavanda hermosa
-  lavenderLight: '#F3E5F5',     // Lavanda muy claro
-  lavenderDark: '#8E24AA',      // Lavanda más intenso
-  
-  // Durazno suave (alertas, información)
-  peachSoft: '#FFB74D',         // Durazno suave
-  peachLight: '#FFF3E0',        // Durazno muy claro
-  peachDark: '#F57C00',         // Durazno más intenso
-  
-  // Gris perla (neutral, elegante)
-  pearlGray: '#90A4AE',         // Gris perla bonito
-  pearlGrayLight: '#F5F5F5',    // Gris perla claro
-  pearlGrayDark: '#546E7A',     // Gris perla oscuro
-  
-  // Turquesa suave (información, frescura)
-  turquoise: '#4DD0E1',         // Turquesa bonita
+//
+// 🎨 Paleta base (coherente y agradable para finanzas)
+//
+const Palette = {
+  // Primary (celeste financiero)
+  primary:            '#2E90FA',
+  primaryLightText:   '#1A275F',
+  primaryLightBg:     '#EAF2FF',
+  primaryDark:        '#84C5FF',
+  primaryDarkText:    '#0B2B4A',
+  primaryDarkBg:      '#0B2742',
+
+  // Success (verde saludable)
+  success:            '#16B364',
+  successLightBg:     '#D1FADF',
+  successDarkBg:      '#0B2E1E',
+
+  // Error / Loss (coral suave)
+  error:              '#F97066',
+  errorLightBg:       '#FFE6E2',
+  errorDarkBg:        '#3C1010',
+
+  // Tertiary (lavanda elegante)
+  tertiary:           '#8D5CF6',
+  tertiaryLightBg:    '#EEE5FF',
+  tertiaryDarkBg:     '#2B1F51',
+
+  // Warning / Info
+  warning:            '#F79009',
+  warningLightBg:     '#FFF4E5',
+  warningDarkBg:      '#4A2E00',
+
+  info:               '#06AED4',
+  infoLightBg:        '#E0F7FD',
+  infoDarkBg:         '#062B33',
+
+  // Neutros
+  white:              '#FFFFFF',
+  black:              '#000000',
+  onLight:            '#0F1728',  // texto principal en claro
+  onDark:             '#E6E8EB',  // texto principal en oscuro
+  surfaceVarL:        '#F7F7FA',
+  onSurfaceVarL:      '#475467',
+  outlineL:           '#D0D5DD',
+  outlineVarL:        '#E4E7EC',
+
+  surfaceVarD:        '#0B0F14',
+  onSurfaceVarD:      '#98A2B3',
+  outlineD:           '#3A4151',
+  outlineVarD:        '#1F2430',
+
+  neutral:            '#98A2B3',
 };
 
-export const lightTheme = {
+//
+// 🔧 Tipo de tema extendido (para evitar "any" al agregar colores propios)
+//
+export type AppTheme = MD3Theme & {
+  colors: MD3Theme['colors'] & {
+    success: string; onSuccess: string;
+    warning: string; onWarning: string;
+    info: string; onInfo: string;
+    profit: string; loss: string; neutral: string;
+  };
+};
+
+//
+// ☀️ LIGHT — fondos puros, acentos limpios
+//
+export const lightTheme: AppTheme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
-    
-    // Colores principales - Celeste bonito y sereno
-    primary: financialColorsPastel.celesteMain,
-    onPrimary: '#FFFFFF',
-    primaryContainer: financialColorsPastel.celesteLight,
-    onPrimaryContainer: financialColorsPastel.celesteDark,
-    
-    // Colores secundarios - Verde success tradicional
-    secondary: financialColorsPastel.successGreen,
-    onSecondary: '#FFFFFF',
-    secondaryContainer: financialColorsPastel.successGreenLight,
-    onSecondaryContainer: financialColorsPastel.successGreenDark,
-    
-    // Colores terciarios - Lavanda premium
-    tertiary: financialColorsPastel.lavender,
-    onTertiary: '#FFFFFF',
-    tertiaryContainer: financialColorsPastel.lavenderLight,
-    onTertiaryContainer: financialColorsPastel.lavenderDark,
-    
-    // Superficies y fondos - Blancos más cálidos
-    surface: '#FEFEFE',
-    onSurface: '#1C1B1F',
-    surfaceVariant: '#F8F9FA',
-    onSurfaceVariant: '#49454F',
-    surfaceTint: financialColorsPastel.celesteMain,
-    
-    // Fondo principal más cálido
-    background: '#FFFFFF',
-    onBackground: '#1C1B1F',
-    
-    // Estados de error - Coral suave y bonito
-    error: financialColorsPastel.coralSoft,
-    onError: '#FFFFFF',
-    errorContainer: financialColorsPastel.coralLight,
-    onErrorContainer: financialColorsPastel.coralDark,
-    
-    // Bordes y divisores más suaves
-    outline: '#B0BEC5',
-    outlineVariant: '#E0E0E0',
-    
-    // Estados especiales para finanzas - Colores bonitos
-    success: financialColorsPastel.successGreen,
-    onSuccess: '#FFFFFF',
-    warning: financialColorsPastel.peachSoft,
-    onWarning: '#FFFFFF',
-    info: financialColorsPastel.turquoise,
-    onInfo: '#FFFFFF',
-    
-    // Colores específicos para gráficos financieros - Bonitos
-    profit: financialColorsPastel.successGreen,
-    loss: financialColorsPastel.coralSoft,
-    neutral: financialColorsPastel.pearlGray,
-    
-    // Elevation shadows más sutiles
-    shadow: 'rgba(0, 0, 0, 0.06)',
-    scrim: 'rgba(0, 0, 0, 0.25)',
-  },
-};
 
-export const darkTheme = {
+    // Fondos/Superficies: blanco puro (sin "plomo")
+    background: Palette.white,
+    onBackground: Palette.onLight,
+    surface: Palette.white,
+    onSurface: Palette.onLight,
+    surfaceVariant: Palette.surfaceVarL,
+    onSurfaceVariant: Palette.onSurfaceVarL,
+    surfaceTint: 'transparent', // ← sin overlay MD3
+
+    // Primary
+    primary: Palette.primary,
+    onPrimary: Palette.white,
+    primaryContainer: Palette.primaryLightBg,
+    onPrimaryContainer: Palette.primaryLightText,
+
+    // Secondary (usamos verde éxito como secundario)
+    secondary: Palette.success,
+    onSecondary: Palette.white,
+    secondaryContainer: Palette.successLightBg,
+    onSecondaryContainer: '#0E4B34',
+
+    // Tertiary
+    tertiary: Palette.tertiary,
+    onTertiary: Palette.white,
+    tertiaryContainer: Palette.tertiaryLightBg,
+    onTertiaryContainer: '#3A1D7A',
+
+    // Error
+    error: Palette.error,
+    onError: Palette.white,
+    errorContainer: Palette.errorLightBg,
+    onErrorContainer: '#7C2D12',
+
+    // Bordes / sombras
+    outline: Palette.outlineL,
+    outlineVariant: Palette.outlineVarL,
+    shadow: 'rgba(0,0,0,0.06)',
+    scrim: 'rgba(0,0,0,0.25)',
+
+    // Extras semánticos
+    success: Palette.success,
+    onSuccess: Palette.white,
+    warning: Palette.warning,
+    onWarning: Palette.onLight,
+    info: Palette.info,
+    onInfo: Palette.white,
+
+    // Gráficos
+    profit: Palette.success,
+    loss: Palette.error,
+    neutral: Palette.neutral,
+  },
+} as AppTheme;
+
+//
+// 🌙 DARK — negro real, acentos legibles
+//
+export const darkTheme: AppTheme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    
-    // Colores principales - Celeste elegante balanceado para dark mode
-    primary: '#64B5F6',           // Celeste balanceado para dark
-    onPrimary: '#0D47A1',
-    primaryContainer: '#1976D2',
-    onPrimaryContainer: '#BBDEFB',
-    
-    // Colores secundarios - Verde success para dark
-    secondary: '#81C784',         // Verde success para dark
-    onSecondary: '#1B5E20',
-    secondaryContainer: '#388E3C',
-    onSecondaryContainer: '#C8E6C9',
-    
-    // Colores terciarios - Lavanda suave
-    tertiary: '#CE93D8',          // Lavanda para dark
-    onTertiary: '#4A148C',
-    tertiaryContainer: '#7B1FA2',
-    onTertiaryContainer: '#F8BBD9',
-    
-    // Superficies oscuras más cálidas
-    surface: '#1A1A1A',
-    onSurface: '#E5E5E5',
-    surfaceVariant: '#2A2A2A',
-    onSurfaceVariant: '#C0C0C0',
-    surfaceTint: '#81D4FA',
-    
-    // Fondo principal oscuro más cálido
-    background: '#121212',
-    onBackground: '#E5E5E5',
-    
-    // Estados de error en dark mode - Coral suave
-    error: '#FFAB91',            // Coral suave para dark
-    onError: '#BF360C',
-    errorContainer: '#D84315',
-    onErrorContainer: '#FFE0B2',
-    
-    // Bordes y divisores para dark mode - Más suaves
-    outline: '#78909C',
-    outlineVariant: '#37474F',
-    
-    // Estados especiales para finanzas en dark mode - Bonitos
-    success: '#81C784',
-    onSuccess: '#FFFFFF',
+
+    // Fondos/Superficies: negro puro
+    background: Palette.black,
+    onBackground: Palette.onDark,
+    surface: Palette.black,
+    onSurface: Palette.onDark,
+    surfaceVariant: Palette.surfaceVarD,
+    onSurfaceVariant: Palette.onSurfaceVarD,
+    surfaceTint: 'transparent', // ← sin overlay MD3
+
+    // Primary (más luminoso en dark)
+    primary: Palette.primaryDark,
+    onPrimary: Palette.primaryDarkText,
+    primaryContainer: Palette.primaryDarkBg,
+    onPrimaryContainer: '#CFE8FF',
+
+    // Secondary (success en dark)
+    secondary: '#81D8AE',
+    onSecondary: '#0C2C20',
+    secondaryContainer: Palette.successDarkBg,
+    onSecondaryContainer: '#CFF6E3',
+
+    // Tertiary
+    tertiary: '#B399FF',
+    onTertiary: '#23123F',
+    tertiaryContainer: Palette.tertiaryDarkBg,
+    onTertiaryContainer: '#EBD9FF',
+
+    // Error
+    error: '#FF9A7A',
+    onError: '#3B0E05',
+    errorContainer: Palette.errorDarkBg,
+    onErrorContainer: '#FFD7CC',
+
+    // Bordes / sombras
+    outline: Palette.outlineD,
+    outlineVariant: Palette.outlineVarD,
+    shadow: 'rgba(0,0,0,0.3)',
+    scrim: 'rgba(0,0,0,0.5)',
+
+    // Extras semánticos
+    success: '#81D8AE',
+    onSuccess: Palette.black,
     warning: '#FFCC02',
-    onWarning: '#FFFFFF', 
-    info: '#4FC3F7',
-    onInfo: '#FFFFFF',
-    
-    // Colores específicos para gráficos financieros dark - Bonitos
-    profit: '#81C784',
-    loss: '#FFAB91',
-    neutral: '#90A4AE',
-    
-    // Shadows para dark mode - Más sutiles
-    shadow: 'rgba(0, 0, 0, 0.3)',
-    scrim: 'rgba(0, 0, 0, 0.5)',
+    onWarning: Palette.black,
+    info: '#7ADBE8',
+    onInfo: Palette.black,
+
+    // Gráficos
+    profit: '#81D8AE',
+    loss: '#FF9A7A',
+    neutral: '#9AA5B1',
   },
-};
+} as AppTheme;
