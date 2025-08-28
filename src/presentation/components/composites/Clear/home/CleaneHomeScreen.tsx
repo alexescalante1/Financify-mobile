@@ -1,13 +1,9 @@
 import React, { useState, useMemo, useRef } from "react";
 import { View, ScrollView, Dimensions, RefreshControl } from "react-native";
-import {
-  Text,
-  ActivityIndicator,
-  useTheme,
-} from "react-native-paper";
+import { Text, ActivityIndicator, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../../../application/hooks/useAuth";
-import { useTransactions } from "../../../application/hooks/useTransactions";
+import { useAuth } from "@/application/hooks/useAuth";
+import { useTransactions } from "@/application/hooks/useTransactions";
 import { AddMoneyModal } from "./AddMoneyModal";
 import { RegularizeBalanceModal } from "./RegularizeBalanceModal";
 import { HeaderSection } from "./components/HeaderSection";
@@ -17,9 +13,6 @@ import { PeriodSelector } from "./components/PeriodSelector";
 import { PeriodSummary } from "./components/PeriodSummary";
 import { BalanceChart } from "./components/BalanceChart";
 import { TransactionListScreen } from "./transactions/TransactionListScreen";
-import ThemeContainer from "@/presentation/components/common/container/ThemeContainer";
-
-const screenWidth: number = Dimensions.get("window").width;
 
 // ============= TYPES =============
 type ChartPeriod = "daily" | "monthly" | "quarterly" | "yearly";
@@ -56,8 +49,18 @@ interface Transaction {
 
 // ============= CONSTANTS =============
 const MONTH_NAMES = [
-  "Ene", "Feb", "Mar", "Abr", "May", "Jun",
-  "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
+  "Ene",
+  "Feb",
+  "Mar",
+  "Abr",
+  "May",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dic",
 ];
 
 const PERIOD_TITLES: Record<ChartPeriod, string> = {
@@ -69,7 +72,7 @@ const PERIOD_TITLES: Record<ChartPeriod, string> = {
 
 const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
 
-const HomeScreen: React.FC = () => {
+const CleaneHomeScreen: React.FC = () => {
   const theme = useTheme();
   const { user } = useAuth();
   const {
@@ -84,7 +87,8 @@ const HomeScreen: React.FC = () => {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("monthly");
-  const [showRegularizeModal, setShowRegularizeModal] = useState<boolean>(false);
+  const [showRegularizeModal, setShowRegularizeModal] =
+    useState<boolean>(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // ============= UTILITY FUNCTIONS =============
@@ -108,8 +112,9 @@ const HomeScreen: React.FC = () => {
   };
 
   const generateDailyLabels = (): string[] => {
-    return Array.from({ length: 24 }, (_, i) => 
-      `${i.toString().padStart(2, "0")}:00`
+    return Array.from(
+      { length: 24 },
+      (_, i) => `${i.toString().padStart(2, "0")}:00`
     );
   };
 
@@ -129,7 +134,7 @@ const HomeScreen: React.FC = () => {
   };
 
   const generateYearlyLabels = (now: Date): string[] => {
-    return Array.from({ length: 10 }, (_, i) => 
+    return Array.from({ length: 10 }, (_, i) =>
       (now.getFullYear() - 9 + i).toString()
     );
   };
@@ -152,8 +157,8 @@ const HomeScreen: React.FC = () => {
   };
 
   const getLabelKeyForTransaction = (
-    date: Date, 
-    period: ChartPeriod, 
+    date: Date,
+    period: ChartPeriod,
     now: Date
   ): string | undefined => {
     switch (period) {
@@ -164,15 +169,18 @@ const HomeScreen: React.FC = () => {
         return undefined;
 
       case "monthly":
-        const daysDiff = Math.floor((now.getTime() - date.getTime()) / MILLISECONDS_PER_DAY);
+        const daysDiff = Math.floor(
+          (now.getTime() - date.getTime()) / MILLISECONDS_PER_DAY
+        );
         if (daysDiff <= 29 && daysDiff >= 0) {
           return `${date.getDate()}/${(date.getMonth() + 1).toString().padStart(2, "0")}`;
         }
         return undefined;
 
       case "quarterly":
-        const monthsDiff = (now.getFullYear() - date.getFullYear()) * 12 + 
-                          (now.getMonth() - date.getMonth());
+        const monthsDiff =
+          (now.getFullYear() - date.getFullYear()) * 12 +
+          (now.getMonth() - date.getMonth());
         if (monthsDiff <= 23 && monthsDiff >= 0) {
           return `${MONTH_NAMES[date.getMonth()]} ${date.getFullYear().toString().slice(-2)}`;
         }
@@ -208,14 +216,20 @@ const HomeScreen: React.FC = () => {
     return cumulativeData;
   };
 
-  const getPeriodDateRange = (period: ChartPeriod): { startDate: Date; endDate: Date } => {
+  const getPeriodDateRange = (
+    period: ChartPeriod
+  ): { startDate: Date; endDate: Date } => {
     const now = new Date();
     let startDate: Date, endDate: Date;
 
     switch (period) {
       case "daily":
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        endDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() + 1
+        );
         break;
       case "monthly":
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -238,9 +252,12 @@ const HomeScreen: React.FC = () => {
     return { startDate, endDate };
   };
 
-  const isTransactionInCurrentPeriod = (transaction: Transaction, period: ChartPeriod): boolean => {
+  const isTransactionInCurrentPeriod = (
+    transaction: Transaction,
+    period: ChartPeriod
+  ): boolean => {
     if (!transaction.createdAt?.toDate) return false;
-    
+
     const date = transaction.createdAt.toDate();
     const now = new Date();
 
@@ -248,8 +265,10 @@ const HomeScreen: React.FC = () => {
       case "daily":
         return date.toDateString() === now.toDateString();
       case "monthly":
-        return date.getMonth() === now.getMonth() && 
-               date.getFullYear() === now.getFullYear();
+        return (
+          date.getMonth() === now.getMonth() &&
+          date.getFullYear() === now.getFullYear()
+        );
       case "quarterly":
         const currentQ = Math.floor(now.getMonth() / 3);
         const transQ = Math.floor(date.getMonth() / 3);
@@ -281,9 +300,10 @@ const HomeScreen: React.FC = () => {
         const labelKey = getLabelKeyForTransaction(date, chartPeriod, now);
 
         if (labelKey && periodTotals.hasOwnProperty(labelKey)) {
-          const amount = transaction.type === "income" 
-            ? transaction.amount 
-            : -transaction.amount;
+          const amount =
+            transaction.type === "income"
+              ? transaction.amount
+              : -transaction.amount;
           periodTotals[labelKey] += amount;
         }
       });
@@ -324,7 +344,7 @@ const HomeScreen: React.FC = () => {
   }, [transactions, chartPeriod]);
 
   const currentPeriodTransactions = useMemo(() => {
-    return transactions.filter((transaction) => 
+    return transactions.filter((transaction) =>
       isTransactionInCurrentPeriod(transaction, chartPeriod)
     );
   }, [transactions, chartPeriod]);
@@ -361,7 +381,7 @@ const HomeScreen: React.FC = () => {
 
   // ============= RENDER =============
   return (
-    <ThemeContainer>
+    <>
       <ScrollView
         ref={scrollViewRef}
         style={{
@@ -405,7 +425,7 @@ const HomeScreen: React.FC = () => {
         <BalanceChart chartData={chartData} chartPeriod={chartPeriod} />
 
         <TransactionListScreen />
-        
+
         <View style={{ height: 50 }} />
       </ScrollView>
 
@@ -422,8 +442,8 @@ const HomeScreen: React.FC = () => {
         onRegularize={regularizeBalance}
         loading={loading}
       />
-    </ThemeContainer>
+    </>
   );
 };
 
-export { HomeScreen };
+export default CleaneHomeScreen;

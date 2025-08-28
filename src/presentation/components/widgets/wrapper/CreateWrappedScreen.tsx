@@ -1,7 +1,7 @@
 import React from "react";
-import ScreenWrapper from "@/presentation/components/common/wrapper/ScreenWrapper";
+import ScreenWrapper from "@/presentation/components/widgets/wrapper/ScreenWrapper";
 
-const createWrappedScreen = <T extends object>(Component: React.ComponentType<T>) => {
+const CreateWrappedScreen = <T extends object>(Component: React.ComponentType<T>) => {
   const WrappedComponent = (props: T) => (
     <ScreenWrapper>
       <Component {...props} />
@@ -12,4 +12,4 @@ const createWrappedScreen = <T extends object>(Component: React.ComponentType<T>
   return WrappedComponent;
 };
 
-export default createWrappedScreen;
+export default CreateWrappedScreen;

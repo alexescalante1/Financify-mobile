@@ -3,12 +3,12 @@ import { ActivityIndicator, StyleSheet } from "react-native";
 import { useTheme, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-interface AuthLoadingScreenProps {
+interface LoadingScreenProps {
   message?: string;
   showSpinner?: boolean;
 }
 
-const AuthLoadingScreen: React.FC<AuthLoadingScreenProps> = React.memo(({ 
+const LoadingScreen: React.FC<LoadingScreenProps> = React.memo(({ 
   message = "Verificando sesión...",
   showSpinner = true 
 }) => {
@@ -56,4 +56,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AuthLoadingScreen;
+export default LoadingScreen;

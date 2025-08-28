@@ -15,7 +15,7 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { useTransactions } from "@/application/hooks/useTransactions";
 import { TransactionVo } from "@/domain/valueObjects/TransactionVo";
-import { SmoothPopupFullScreen } from "@/presentation/components/common/screen/SmoothPopupFullScreen";
+import { SmoothPopupFullScreen } from "@/presentation/components/widgets/screen/SmoothPopupFullScreen";
 
 // ============= TYPES =============
 interface AddMoneyModalProps {

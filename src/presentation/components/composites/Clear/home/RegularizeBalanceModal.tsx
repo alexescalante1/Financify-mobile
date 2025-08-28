@@ -13,8 +13,8 @@ import {
   IconButton,
 } from 'react-native-paper';
 import { useForm, Controller } from 'react-hook-form';
-import { SmoothPopupFullScreen } from '@/presentation/components/common/screen/SmoothPopupFullScreen';
-import { SimpleCard } from '@/presentation/components/common/card/SimpleCard';
+import { SmoothPopupFullScreen } from '@/presentation/components/widgets/screen/SmoothPopupFullScreen';
+import { SimpleCard } from '@/presentation/components/widgets/card/SimpleCard';
 
 // ============= TYPES =============
 interface RegularizeBalanceModalProps {

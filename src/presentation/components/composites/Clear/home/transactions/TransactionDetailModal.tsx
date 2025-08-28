@@ -18,7 +18,7 @@ import {
   validateTransactionDetail,
   calculateDetailDiscrepancy,
 } from "@/domain/valueObjects/TransactionVo";
-import { SmoothPopupFullScreen } from '@/presentation/components/common/screen/SmoothPopupFullScreen';
+import { SmoothPopupFullScreen } from '@/presentation/components/widgets/screen/SmoothPopupFullScreen';
 
 interface TransactionDetailModalProps {
   visible: boolean;

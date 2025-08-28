@@ -9,7 +9,7 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useFocusEffect } from "@react-navigation/native";
-import { OptimizedParticlesBackground } from "@/presentation/components/common/animated/OptimizedParticlesBackground";
+import { OptimizedParticlesBackground } from "@/presentation/components/widgets/animated/OptimizedParticlesBackground";
 
 export const WelcomeScreen = ({ navigation }: { navigation: any }) => {
   const theme = useTheme();

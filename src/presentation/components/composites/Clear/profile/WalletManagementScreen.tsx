@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { View, ScrollView, Alert } from "react-native";
 import {
   Text,
@@ -6,7 +6,6 @@ import {
   Card,
   Chip,
   Divider,
-  Avatar,
   useTheme,
   TextInput,
   Modal,
@@ -18,7 +17,6 @@ import {
   ActivityIndicator,
   Snackbar,
 } from "react-native-paper";
-import { useAuth } from "../../../application/hooks/useAuth";
 
 // Importar todos los hooks necesarios
 import {
@@ -32,6 +30,7 @@ import {
   useTotalBalance,
 } from "@/application/hooks/useWallets";
 import { Wallet } from "@/domain/entities/Wallet";
+import { CurrencyType } from "@/domain/types/CurrencyType";
 
 // ========================================
 // INTERFACES
@@ -40,10 +39,10 @@ import { Wallet } from "@/domain/entities/Wallet";
 interface WalletFormData {
   name: string;
   description: string;
-  type: string;
-  assetTypeId: string;
+  _idType: number;
+  _idAssetType: number;
   balance: string;
-  currency: string;
+  currency: CurrencyType;
   isPrimary: boolean;
 }
 
@@ -183,8 +182,8 @@ const EditWalletModal: React.FC<EditWalletModalProps> = ({
   const [formData, setFormData] = useState<WalletFormData>({
     name: wallet?.name || "",
     description: wallet?.description || "",
-    type: wallet?._idType || "digital",
-    assetTypeId: wallet?._idAssetType || "",
+    _idType: wallet?._idType || 0,
+    _idAssetType: wallet?._idAssetType || 0,
     balance: wallet?.balance?.toString() || "0",
     currency: wallet?.currency || "USD",
     isPrimary: wallet?.isPrimary || false,
@@ -193,10 +192,10 @@ const EditWalletModal: React.FC<EditWalletModalProps> = ({
   const [errors, setErrors] = useState<Partial<WalletFormData>>({});
 
   const walletTypes = [
-    { value: "digital", label: "Digital" },
-    { value: "physical", label: "Física" },
-    { value: "bank", label: "Banco" },
-    { value: "crypto", label: "Crypto" },
+    { value: "0", label: "Digital" },
+    { value: "1", label: "Física" },
+    { value: "2", label: "Banco" },
+    { value: "3", label: "Crypto" },
   ];
 
   const currencies = [
@@ -215,10 +214,6 @@ const EditWalletModal: React.FC<EditWalletModalProps> = ({
 
     if (!formData.description.trim()) {
       newErrors.description = "La descripción es requerida";
-    }
-
-    if (!formData.assetTypeId.trim()) {
-      newErrors.assetTypeId = "El tipo de activo es requerido";
     }
 
     const balance = parseFloat(formData.balance);
@@ -242,8 +237,8 @@ const EditWalletModal: React.FC<EditWalletModalProps> = ({
       setFormData({
         name: wallet?.name || "",
         description: wallet?.description || "",
-        type: wallet?._idType || "digital",
-        assetTypeId: wallet?._idAssetType || "",
+        _idType: wallet?._idType || 0,
+        _idAssetType: wallet?._idAssetType || 0,
         balance: wallet?.balance?.toString() || "0",
         currency: wallet?.currency || "USD",
         isPrimary: wallet?.isPrimary || false,
@@ -302,25 +297,20 @@ const EditWalletModal: React.FC<EditWalletModalProps> = ({
             Tipo de Wallet
           </Text>
           <SegmentedButtons
-            value={formData.type}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+            value={formData._idType.toString()}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, _idType: parseInt(value) }))}
             buttons={walletTypes}
             style={{ marginBottom: 16 }}
           />
 
           <TextInput
-            label="Tipo de Activo *"
-            value={formData.assetTypeId}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, assetTypeId: text }))}
-            error={!!errors.assetTypeId}
-            placeholder="ej: crypto-btc, fiat-usd"
+            label="Tipo de Activo"
+            value={formData._idAssetType.toString()}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, _idAssetType: parseInt(text) || 0 }))}
+            keyboardType="numeric"
+            placeholder="ej: 1, 2, 3"
             style={{ marginBottom: 12 }}
           />
-          {errors.assetTypeId && (
-            <Text style={{ color: theme.colors.error, fontSize: 12, marginBottom: 8 }}>
-              {errors.assetTypeId}
-            </Text>
-          )}
 
           <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
             <TextInput
@@ -338,13 +328,13 @@ const EditWalletModal: React.FC<EditWalletModalProps> = ({
               </Text>
               <SegmentedButtons
                 value={formData.currency}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value as CurrencyType }))}
                 buttons={currencies.slice(0, 2)}
                 style={{ marginBottom: 8 }}
               />
               <SegmentedButtons
                 value={formData.currency}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value as CurrencyType }))}
                 buttons={currencies.slice(2)}
               />
             </View>
@@ -396,12 +386,11 @@ const EditWalletModal: React.FC<EditWalletModalProps> = ({
 };
 
 // ========================================
-// COMPONENTE PRINCIPAL
+// COMPONENTE PRINCIPAL DE WALLETS
 // ========================================
 
-export const ReportsScreen: React.FC = () => {
+export const WalletManagementScreen: React.FC = () => {
   const theme = useTheme();
-  const { user, logout } = useAuth();
 
   // Hooks de datos
   const { wallets, loading: walletsLoading, error: walletsError } = useAllWallets();
@@ -448,7 +437,7 @@ export const ReportsScreen: React.FC = () => {
       const walletData = {
         ...formData,
         balance: parseFloat(formData.balance),
-        createdAt: new Date().toISOString(),
+        createdAt: new Date(),
       };
 
       if (editingWallet) {
@@ -538,7 +527,7 @@ export const ReportsScreen: React.FC = () => {
         {/* Header */}
         <View style={{ alignItems: "center", marginBottom: 24 }}>
           <Text variant="headlineMedium" style={{ fontWeight: "bold", marginBottom: 8 }}>
-            💰 Gestión de Wallets
+            Gestión de Wallets
           </Text>
           <Text variant="bodyLarge" style={{ textAlign: "center" }}>
             Administra tus wallets en tiempo real
@@ -549,7 +538,7 @@ export const ReportsScreen: React.FC = () => {
         <Card style={{ marginBottom: 20, backgroundColor: theme.colors.primaryContainer }}>
           <Card.Content style={{ padding: 20 }}>
             <Text variant="titleMedium" style={{ fontWeight: "600", marginBottom: 12 }}>
-              📊 Resumen
+              Resumen
             </Text>
             <View style={{ flexDirection: "row", justifyContent: "space-around" }}>
               <View style={{ alignItems: "center" }}>
@@ -602,7 +591,7 @@ export const ReportsScreen: React.FC = () => {
           <Card style={{ marginBottom: 20 }}>
             <Card.Content style={{ alignItems: "center", padding: 40 }}>
               <Text variant="headlineSmall" style={{ fontSize: 48, marginBottom: 16 }}>
-                👛
+                📱
               </Text>
               <Text variant="titleMedium" style={{ fontWeight: "600", marginBottom: 8 }}>
                 No tienes wallets
@@ -627,30 +616,6 @@ export const ReportsScreen: React.FC = () => {
             />
           ))
         )}
-
-        {/* Información del usuario */}
-        <View style={{ marginTop: 32, marginBottom: 100 }}>
-          <Card style={{ backgroundColor: theme.colors.surface }}>
-            <Card.Content style={{ paddingVertical: 20 }}>
-              <View style={{ alignItems: "center", marginBottom: 20 }}>
-                <Avatar.Icon size={48} icon="account" />
-                <Text variant="titleMedium" style={{ fontWeight: "600", marginBottom: 4 }}>
-                  {user?.fullName || "Usuario"}
-                </Text>
-                <Text variant="bodySmall">{user?.email || "email@ejemplo.com"}</Text>
-              </View>
-              <Divider />
-              <Button
-                mode="outlined"
-                icon="logout"
-                onPress={logout}
-                style={{ marginTop: 16 }}
-              >
-                Cerrar Sesión
-              </Button>
-            </Card.Content>
-          </Card>
-        </View>
       </ScrollView>
 
       {/* FAB para crear wallet */}

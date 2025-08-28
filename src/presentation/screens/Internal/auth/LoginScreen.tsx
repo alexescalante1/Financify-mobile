@@ -15,7 +15,7 @@ import { Formik } from "formik";
 import * as Yup from "yup";
 import { useAuth } from "@/application/hooks/useAuth";
 import { useFocusEffect } from "@react-navigation/native";
-import { OptimizedParticlesBackground } from "@/presentation/components/common/animated/OptimizedParticlesBackground";
+import { OptimizedParticlesBackground } from "@/presentation/components/widgets/animated/OptimizedParticlesBackground";
 
 interface LoginFormData {
   email: string;
