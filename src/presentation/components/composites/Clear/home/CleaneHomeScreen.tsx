@@ -366,18 +366,18 @@ const CleaneHomeScreen: React.FC = () => {
   };
 
   // ============= LOADING STATE =============
-  if (loading && transactions.length === 0) {
-    return (
-      <SafeAreaView
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-      >
-        <ActivityIndicator size="large" />
-        <Text variant="bodyLarge" style={{ marginTop: 16 }}>
-          Cargando datos financieros...
-        </Text>
-      </SafeAreaView>
-    );
-  }
+  // if (loading && transactions.length === 0) {
+  //   return (
+  //     <SafeAreaView
+  //       style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+  //     >
+  //       <ActivityIndicator size="large" />
+  //       <Text variant="bodyLarge" style={{ marginTop: 16 }}>
+  //         Cargando datos financieros...
+  //       </Text>
+  //     </SafeAreaView>
+  //   );
+  // }
 
   // ============= RENDER =============
   return (
