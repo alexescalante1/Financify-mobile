@@ -19,9 +19,9 @@ import NoInternetScreen from "@/presentation/components/composites/internal/NoIn
 import CreateWrappedScreen from "@/presentation/components/widgets/wrapper/CreateWrappedScreen";
 
 // Screens - Auth
-import { WelcomeScreen } from "./screens/Internal/auth/WelcomeScreen";
-import { LoginScreen } from "./screens/Internal/auth/LoginScreen";
-import { RegisterScreen } from "./screens/Internal/auth/RegisterScreen";
+import { WelcomeScreen } from "./screens/Internal/start/WelcomeScreen";
+import { LoginScreen } from "./screens/Internal/start/LoginScreen";
+import { RegisterScreen } from "./screens/Internal/start/RegisterScreen";
 
 // Screens - Main
 import { HomeScreen } from "./screens/Pages/home/HomeScreen";

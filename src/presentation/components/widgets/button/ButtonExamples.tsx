@@ -7,7 +7,7 @@ export const ButtonExamples: React.FC = () => {
   const ButtonRow = ({ children }: { children: React.ReactNode }) => (
     <View style={styles.row}>{children}</View>
   );
-
+  
   return (
     <View style={styles.container}>
       {/* Todas las variantes */}

@@ -524,16 +524,6 @@ export const WalletManagementScreen: React.FC = () => {
         contentContainerStyle={{ padding: 20 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={{ alignItems: "center", marginBottom: 24 }}>
-          <Text variant="headlineMedium" style={{ fontWeight: "bold", marginBottom: 8 }}>
-            Gestión de Wallets
-          </Text>
-          <Text variant="bodyLarge" style={{ textAlign: "center" }}>
-            Administra tus wallets en tiempo real
-          </Text>
-        </View>
-
         {/* Estadísticas */}
         <Card style={{ marginBottom: 20, backgroundColor: theme.colors.primaryContainer }}>
           <Card.Content style={{ padding: 20 }}>
