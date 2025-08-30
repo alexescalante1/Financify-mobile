@@ -187,15 +187,15 @@ export const ExpandableCard: React.FC<ExpandableCardProps> = React.memo(({
     inputRange: [0, 1],
     outputRange: ['0deg', '180deg'],
   });
-
+  
   const finalStyle = useMemo(() => [cardStyles, style], [cardStyles, style]);
 
   const headerContentStyle = useMemo(() => ({
     flexDirection: iconPosition === 'left' ? 'row' : 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 0,
+    paddingVertical: 2,
   }), [iconPosition]);
 
   const titleContainerStyle = useMemo(() => ({

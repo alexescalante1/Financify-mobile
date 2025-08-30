@@ -6,21 +6,21 @@ import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from 'react-native-paper';
 //
 const Palette = {
   // Primary — celeste + punch
-  primary:            '#00A8FF',   // más vibrante
+  primary:            '#00BEFF',   // más vibrante
   primaryLightText:   '#0B2B52',
   primaryLightBg:     '#D9F2FF',   // +luz y +saturación
-  primaryDark:        '#4CC6FF',   // acento en dark más luminoso
+  primaryDark:        '#00C6FF',   // acento en dark más luminoso
   primaryDarkText:    '#001A2F',
   primaryDarkBg:      '#002546',
 
   // Success — verde fresco y brillante
-  success:            '#12D18E',
+  success:            '#00D18F',
   successLightBg:     '#CFFBE9',
   successDarkBg:      '#053427',
 
   // Error — rojo/coral más vivo
-  error:              '#FF5A5F',
-  errorLightBg:       '#FFE4E6',
+  error:              '#FF2A5F',
+  errorLightBg:       '#FFD4E6',
   errorDarkBg:        '#3C1014',
 
   // Tertiary — violeta eléctrico
@@ -140,7 +140,7 @@ export const darkTheme: AppTheme = {
     // Fondos / Superficies
     background: Palette.black,       // Negro real para el fondo
     onBackground: Palette.onDark,
-    surface: '#000015',              // ← diferente a background
+    surface: '#000113',              // ← diferente a background
     onSurface: Palette.onDark,
     surfaceVariant: '#111722',       // tono apenas más claro que surface
     onSurfaceVariant: Palette.onSurfaceVarD,

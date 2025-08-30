@@ -43,7 +43,7 @@ const CONFIG = {
     lg: { height: 48, px: 20, fontSize: 16, iconSize: 20 },
     xl: { height: 56, px: 24, fontSize: 18, iconSize: 22 },
   },
-  radius: { xs: 4, sm: 5, md: 6, lg: 7, xl: 8 },
+  radius: { xs: 4, sm: 6, md: 7, lg: 8, xl: 9 },
   shadow: {
     ios: { offset: { width: 0, height: 2 }, radius: 8 },
     android: { elevation: 3, elevationOutline: 1 },
