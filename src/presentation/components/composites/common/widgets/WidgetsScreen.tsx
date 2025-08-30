@@ -16,6 +16,7 @@ import { FinancifyButton } from "@/presentation/components/widgets/button/Financ
 
 // Widgets
 import { ButtonExamples } from "@/presentation/components/widgets/button/ButtonExamples";
+import { CardExamples } from "@/presentation/components/widgets/card/CardExamples";
 
 export const WidgetsScreen: React.FC = () => {
   // DIALOG MANAGEMENT
@@ -76,6 +77,19 @@ export const WidgetsScreen: React.FC = () => {
         >
           <ScrollView>
             <ButtonExamples />
+          </ScrollView>
+        </SmoothPopupFullScreen>
+      )}
+
+      {dialogState.card && (
+        <SmoothPopupFullScreen
+          visible={dialogState.card}
+          onDismiss={() => closeDialog("card")}
+          // backgroundColor={theme.colors.surface}
+          title="CARD EXAMPLE"
+        >
+          <ScrollView>
+            <CardExamples />
           </ScrollView>
         </SmoothPopupFullScreen>
       )}

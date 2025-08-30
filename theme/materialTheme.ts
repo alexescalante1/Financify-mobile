@@ -12,7 +12,7 @@ const Palette = {
   primaryDark:        '#84C5FF',
   primaryDarkText:    '#0B2B4A',
   primaryDarkBg:      '#0B2742',
-
+  
   // Success (verde saludable)
   success:            '#16B364',
   successLightBg:     '#D1FADF',
