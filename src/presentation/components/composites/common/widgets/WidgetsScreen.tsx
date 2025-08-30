@@ -17,12 +17,14 @@ import { FinancifyButton } from "@/presentation/components/widgets/button/Financ
 // Widgets
 import { ButtonExamples } from "@/presentation/components/widgets/button/ButtonExamples";
 import { CardExamples } from "@/presentation/components/widgets/card/CardExamples";
+import { DialogExamples } from "@/presentation/components/widgets/dialog/DialogExamples";
 
 export const WidgetsScreen: React.FC = () => {
   // DIALOG MANAGEMENT
   const [dialogState, setDialogState] = useState<Record<DialogName, boolean>>({
     button: false,
     card: false,
+    dialog: false
   });
 
   const openDialog = (dialogName: DialogName) => {
@@ -64,6 +66,14 @@ export const WidgetsScreen: React.FC = () => {
           style={{ flex: 1 }}
           onPress={() => openDialog("card")}
         />
+
+        <FinancifyButton
+          title="Dialogs"
+          variant="danger"
+          icon="bank-transfer"
+          style={{ flex: 1 }}
+          onPress={() => openDialog("dialog")}
+        />
         
       </View>
 
@@ -90,6 +100,19 @@ export const WidgetsScreen: React.FC = () => {
         >
           <ScrollView>
             <CardExamples />
+          </ScrollView>
+        </SmoothPopupFullScreen>
+      )}
+
+      {dialogState.dialog && (
+        <SmoothPopupFullScreen
+          visible={dialogState.dialog}
+          onDismiss={() => closeDialog("dialog")}
+          // backgroundColor={theme.colors.surface}
+          title="DIALOG EXAMPLE"
+        >
+          <ScrollView>
+            <DialogExamples />
           </ScrollView>
         </SmoothPopupFullScreen>
       )}

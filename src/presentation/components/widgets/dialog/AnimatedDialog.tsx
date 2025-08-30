@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, ReactNode } from "react";
-import { Animated } from "react-native";
+import { Animated, View } from "react-native";
 import {
   Modal,
   Portal,
-  Card,
   IconButton,
   useTheme,
 } from "react-native-paper";
@@ -17,7 +16,6 @@ interface AnimatedDialogProps {
   maxWidth?: number;
   backgroundColor?: string;
   borderRadius?: number;
-  scrimOpacity?: number;
 }
 
 export const AnimatedDialog: React.FC<AnimatedDialogProps> = ({
@@ -28,15 +26,13 @@ export const AnimatedDialog: React.FC<AnimatedDialogProps> = ({
   children,
   maxWidth,
   backgroundColor,
-  borderRadius = 16,
-  scrimOpacity = 0.85,
+  borderRadius = 12,
 }) => {
   const theme = useTheme();
   
   // Valores animados
   const scaleValue = useRef(new Animated.Value(0)).current;
   const opacityValue = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
     if (visible) {
       // Animación de entrada
@@ -74,14 +70,26 @@ export const AnimatedDialog: React.FC<AnimatedDialogProps> = ({
     backgroundColor: 'transparent',
     margin: 20,
     borderRadius,
+    // Eliminar todas las sombras
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
     ...(maxWidth && { maxWidth, alignSelf: 'center' as const }),
   };
 
   const animatedViewStyle = {
     transform: [{ scale: scaleValue }],
     opacity: opacityValue,
-    backgroundColor: backgroundColor || theme.colors.surfaceVariant,
+    backgroundColor: backgroundColor || theme.colors.surface,
     borderRadius,
+    // Eliminar todas las sombras
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
   };
 
   return (
@@ -90,11 +98,28 @@ export const AnimatedDialog: React.FC<AnimatedDialogProps> = ({
         visible={visible}
         onDismiss={onDismiss}
         dismissable={dismissable}
-        style={{ backgroundColor: `rgba(0, 0, 0, ${scrimOpacity})` }}
+        style={{ 
+          backgroundColor: 'transparent',
+          // Eliminar sombras del Modal
+          elevation: 0,
+          shadowColor: 'transparent',
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0,
+          shadowRadius: 0,
+        }}
         contentContainerStyle={containerStyle}
       >
         <Animated.View style={animatedViewStyle}>
-          <Card.Content style={{ padding: 24, position: "relative" }}>
+          <View style={{ 
+            padding: 24, 
+            position: "relative",
+            // Eliminar sombras del contenedor interno
+            elevation: 0,
+            shadowColor: 'transparent',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0,
+            shadowRadius: 0,
+          }}>
             {/* Botón de cerrar opcional */}
             {showCloseButton && (
               <IconButton
@@ -105,14 +130,20 @@ export const AnimatedDialog: React.FC<AnimatedDialogProps> = ({
                   position: "absolute", 
                   top: 8, 
                   right: 8, 
-                  zIndex: 1 
+                  zIndex: 1,
+                  // Eliminar sombras del botón
+                  elevation: 0,
+                  shadowColor: 'transparent',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0,
+                  shadowRadius: 0,
                 }}
               />
             )}
             
             {/* Contenido del dialog */}
             {children}
-          </Card.Content>
+          </View>
         </Animated.View>
       </Modal>
     </Portal>

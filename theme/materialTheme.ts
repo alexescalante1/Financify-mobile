@@ -5,54 +5,54 @@ import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from 'react-native-paper';
 // 🎨 Paleta base (coherente y agradable para finanzas)
 //
 const Palette = {
-  // Primary (celeste financiero)
-  primary:            '#2E90FA',
-  primaryLightText:   '#1A275F',
-  primaryLightBg:     '#EAF2FF',
-  primaryDark:        '#84C5FF',
-  primaryDarkText:    '#0B2B4A',
-  primaryDarkBg:      '#0B2742',
-  
-  // Success (verde saludable)
-  success:            '#16B364',
-  successLightBg:     '#D1FADF',
-  successDarkBg:      '#0B2E1E',
+  // Primary — celeste + punch
+  primary:            '#00A8FF',   // más vibrante
+  primaryLightText:   '#0B2B52',
+  primaryLightBg:     '#D9F2FF',   // +luz y +saturación
+  primaryDark:        '#4CC6FF',   // acento en dark más luminoso
+  primaryDarkText:    '#001A2F',
+  primaryDarkBg:      '#002546',
 
-  // Error / Loss (coral suave)
-  error:              '#F97066',
-  errorLightBg:       '#FFE6E2',
-  errorDarkBg:        '#3C1010',
+  // Success — verde fresco y brillante
+  success:            '#12D18E',
+  successLightBg:     '#CFFBE9',
+  successDarkBg:      '#053427',
 
-  // Tertiary (lavanda elegante)
-  tertiary:           '#8D5CF6',
-  tertiaryLightBg:    '#EEE5FF',
-  tertiaryDarkBg:     '#2B1F51',
+  // Error — rojo/coral más vivo
+  error:              '#FF5A5F',
+  errorLightBg:       '#FFE4E6',
+  errorDarkBg:        '#3C1014',
 
-  // Warning / Info
-  warning:            '#F79009',
-  warningLightBg:     '#FFF4E5',
-  warningDarkBg:      '#4A2E00',
+  // Tertiary — violeta eléctrico
+  tertiary:           '#8B5CF6',
+  tertiaryLightBg:    '#EEE7FF',
+  tertiaryDarkBg:     '#2A1B57',
 
-  info:               '#06AED4',
-  infoLightBg:        '#E0F7FD',
-  infoDarkBg:         '#062B33',
+  // Warning / Info más intensos
+  warning:            '#FFBE0B',
+  warningLightBg:     '#FFF4CC',
+  warningDarkBg:      '#422C00',
 
-  // Neutros
+  info:               '#06B6D4',   // cian vivo
+  infoLightBg:        '#D9FAFF',
+  infoDarkBg:         '#06343D',
+
+  // Neutros (ligero boost en contraste)
   white:              '#FFFFFF',
   black:              '#000000',
-  onLight:            '#0F1728',  // texto principal en claro
-  onDark:             '#E6E8EB',  // texto principal en oscuro
-  surfaceVarL:        '#F7F7FA',
-  onSurfaceVarL:      '#475467',
-  outlineL:           '#D0D5DD',
-  outlineVarL:        '#E4E7EC',
+  onLight:            '#0D1825',
+  onDark:             '#F2F6FB',
+  surfaceVarL:        '#F6F9FC',
+  onSurfaceVarL:      '#3F4A5A',
+  outlineL:           '#C9D1DA',
+  outlineVarL:        '#E1E7EF',
 
-  surfaceVarD:        '#0B0F14',
-  onSurfaceVarD:      '#98A2B3',
-  outlineD:           '#3A4151',
-  outlineVarD:        '#1F2430',
+  surfaceVarD:        '#0C1017',
+  onSurfaceVarD:      '#BAC4D3',
+  outlineD:           '#414A58',
+  outlineVarD:        '#1C2330',
 
-  neutral:            '#98A2B3',
+  neutral:            '#97A3AF',
 };
 
 //
@@ -137,19 +137,28 @@ export const darkTheme: AppTheme = {
   colors: {
     ...MD3DarkTheme.colors,
 
-    // Fondos/Superficies: negro puro
-    background: Palette.black,
+    // Fondos / Superficies
+    background: Palette.black,       // Negro real para el fondo
     onBackground: Palette.onDark,
-    surface: Palette.black,
+    surface: '#000015',              // ← diferente a background
     onSurface: Palette.onDark,
-    surfaceVariant: Palette.surfaceVarD,
+    surfaceVariant: '#111722',       // tono apenas más claro que surface
     onSurfaceVariant: Palette.onSurfaceVarD,
-    surfaceTint: 'transparent', // ← sin overlay MD3
+
+    // Escala MD3 de contenedores (para cards por elevación)
+    surfaceContainerLowest: '#000000',
+    surfaceContainerLow:   '#0B1119',
+    surfaceContainer:      '#0F1621',
+    surfaceContainerHigh:  '#121A26',
+    surfaceContainerHighest:'#151F2C',
+
+    // Trae de vuelta el overlay MD3 con un tinte celeste suave
+    surfaceTint: 'rgba(90, 184, 255, 0.14)',  // ~ Palette.primaryDark con 14%
 
     // Primary (más luminoso en dark)
-    primary: Palette.primaryDark,
-    onPrimary: Palette.primaryDarkText,
-    primaryContainer: Palette.primaryDarkBg,
+    primary: Palette.primaryDark,         // #5AB8FF
+    onPrimary: Palette.primaryDarkText,   // #001A33
+    primaryContainer: Palette.primaryDarkBg, // #002C50
     onPrimaryContainer: '#CFE8FF',
 
     // Secondary (success en dark)
@@ -165,27 +174,27 @@ export const darkTheme: AppTheme = {
     onTertiaryContainer: '#EBD9FF',
 
     // Error
-    error: '#FF9A7A',
-    onError: '#3B0E05',
+    error: Palette.error,
+    onError: '#FFD7CC',
     errorContainer: Palette.errorDarkBg,
     onErrorContainer: '#FFD7CC',
 
     // Bordes / sombras
     outline: Palette.outlineD,
     outlineVariant: Palette.outlineVarD,
-    shadow: 'rgba(0,0,0,0.3)',
-    scrim: 'rgba(0,0,0,0.5)',
+    shadow: 'rgba(0,0,0,0.35)',
+    scrim: 'rgba(0,0,0,0.55)',
 
-    // Extras semánticos
-    success: '#81D8AE',
+    // Extras semánticos más vibrantes en dark
+    success: '#27D99C',
     onSuccess: Palette.black,
     warning: '#FFCC02',
     onWarning: Palette.black,
-    info: '#7ADBE8',
+    info: '#33E1F2',
     onInfo: Palette.black,
 
     // Gráficos
-    profit: '#81D8AE',
+    profit: '#27D99C',
     loss: '#FF9A7A',
     neutral: '#9AA5B1',
   },
