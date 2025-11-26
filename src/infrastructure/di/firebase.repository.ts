@@ -26,8 +26,16 @@ container.registerSingleton<ITransactionStateRepository>(
 );
 
 import { IWalletRepository } from "@/domain/interfaces/repository/IWalletRepository";
-import { WalletRepository } from "@/infrastructure/firebase/repository/WalletRepository";
+import { WalletRepository } from "@/infrastructure/firebase/repository/WalletRepository.refactored";
 container.registerSingleton<IWalletRepository>(
   "IWalletRepository",
   WalletRepository
+);
+
+// Registrar Use Cases
+import { IRegisterUserUseCase } from "@/domain/useCases/IRegisterUserUseCase";
+import { RegisterUserUseCase } from "@/application/useCases/RegisterUserUseCase";
+container.registerSingleton<IRegisterUserUseCase>(
+  "IRegisterUserUseCase",
+  RegisterUserUseCase
 );

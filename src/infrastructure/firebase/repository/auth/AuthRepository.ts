@@ -6,30 +6,39 @@ import {
   GoogleAuthProvider,
   signOut,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/infrastructure/firebase/FirebaseConfiguration';
+import { auth } from '@/infrastructure/firebase/FirebaseConfiguration';
 
 import { IAuthRepository } from '@/domain/repository/IAuthRepository';
 import { User } from '@/domain/models/User';
 import { UserRegistrationVo } from '@/domain/valueObjects/UserRegistrationVo';
+import { UserDAO } from '@/infrastructure/firebase/dao/UserDAO';
+import { UserMapper } from '@/infrastructure/firebase/mappers/UserMapper';
+import { CurrencyType } from '@/domain/types/CurrencyType';
 
 @injectable()
 export class AuthRepository implements IAuthRepository {
+  private readonly userDAO: UserDAO;
+
+  constructor() {
+    this.userDAO = new UserDAO();
+  }
+
   async register(userData: UserRegistrationVo): Promise<User> {
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       userData.email,
       userData.password
     );
-    
+
     const now = new Date().toISOString();
-    
-    const user: Omit<User, 'id'> = {
+
+    const user: User = {
+      id: userCredential.user.uid,
       email: userData.email,
       fullName: userData.fullName,
       gender: userData.gender,
       birthDate: userData.birthDate.toISOString().split('T')[0],
-      currency: userData.currency,
+      currency: userData.currency as CurrencyType,
       language: 'es',
       country: {
         code: 'PE',
@@ -46,21 +55,21 @@ export class AuthRepository implements IAuthRepository {
       status: 'active'
     };
 
-    const userWithId = { ...user, id: userCredential.user.uid };
-    
-    await setDoc(doc(db, 'users', userCredential.user.uid), userWithId);
-    return userWithId;
+    const userDTO = UserMapper.toDTO(user);
+    await this.userDAO.create(userDTO);
+
+    return user;
   }
 
   async login(email: string, password: string): Promise<User> {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+    const userDTO = await this.userDAO.getById(userCredential.user.uid);
 
-    if (!userDoc.exists()) {
+    if (!userDTO) {
       throw new Error('Usuario no encontrado en la base de datos');
     }
 
-    return userDoc.data() as User;
+    return UserMapper.toDomain(userDTO);
   }
 
   // 🆕 Método completo de Google (maneja tanto ID token como access token)
@@ -90,11 +99,11 @@ export class AuthRepository implements IAuthRepository {
       console.log('🔥 Firebase auth exitoso:', userCredential.user.uid);
 
       // Verificar si el usuario ya existe en Firestore
-      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      const userDTO = await this.userDAO.getById(userCredential.user.uid);
 
-      if (userDoc.exists()) {
+      if (userDTO) {
         console.log('🔥 Usuario existente encontrado');
-        return userDoc.data() as User;
+        return UserMapper.toDomain(userDTO);
       } else {
         console.log('🔥 Creando nuevo usuario');
         return await this.createUserFromGoogleAuth(userCredential, googleUserInfo);
@@ -134,17 +143,13 @@ export class AuthRepository implements IAuthRepository {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return null;
 
-    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-    return userDoc.exists() ? (userDoc.data() as User) : null;
+    const userDTO = await this.userDAO.getById(firebaseUser.uid);
+    return userDTO ? UserMapper.toDomain(userDTO) : null;
   }
 
   async updateUser(userId: string, updates: Partial<User>): Promise<void> {
-    const updateData = {
-      ...updates,
-      'metadata.updatedAt': new Date().toISOString()
-    };
-    
-    await setDoc(doc(db, 'users', userId), updateData, { merge: true });
+    const userDTO = UserMapper.toDTO(updates as User);
+    await this.userDAO.update(userId, userDTO);
   }
 
   async isGoogleUser(): Promise<boolean> {
@@ -157,17 +162,18 @@ export class AuthRepository implements IAuthRepository {
   // 🔒 Método privado para crear usuario desde Google (sin hooks)
   private async createUserFromGoogleAuth(userCredential: any, googleUserInfo: any): Promise<User> {
     const now = new Date().toISOString();
-    
-    const fullName = googleUserInfo.name || 
-                    userCredential.user.displayName || 
+
+    const fullName = googleUserInfo.name ||
+                    userCredential.user.displayName ||
                     'Usuario de Google';
-    
-    const user: Omit<User, 'id'> = {
+
+    const user: User = {
+      id: userCredential.user.uid,
       email: userCredential.user.email,
       fullName: fullName,
       gender: 'masculino',
       birthDate: '1990-01-01',
-      currency: 'PEN',
+      currency: 'PEN' as CurrencyType,
       language: 'es',
       country: {
         code: 'PE',
@@ -184,10 +190,9 @@ export class AuthRepository implements IAuthRepository {
       status: 'active'
     };
 
-    const userWithId = { ...user, id: userCredential.user.uid };
-    
-    await setDoc(doc(db, 'users', userCredential.user.uid), userWithId);
-    
-    return userWithId;
+    const userDTO = UserMapper.toDTO(user);
+    await this.userDAO.create(userDTO);
+
+    return user;
   }
 }

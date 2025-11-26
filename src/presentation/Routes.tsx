@@ -21,7 +21,8 @@ import CreateWrappedScreen from "@/presentation/components/widgets/wrapper/Creat
 // Screens - Auth
 import { WelcomeScreen } from "./screens/Internal/start/WelcomeScreen";
 import { LoginScreen } from "./screens/Internal/start/LoginScreen";
-import { RegisterScreen } from "./screens/Internal/start/RegisterScreen";
+// import { RegisterScreen } from "./screens/Internal/start/RegisterScreen"; // Old - deprecated
+import { RegisterScreen } from "./screens/Internal/auth/RegisterScreen"; // New - Clean Architecture
 
 // Screens - Main
 import { HomeScreen } from "./screens/Pages/home/HomeScreen";
