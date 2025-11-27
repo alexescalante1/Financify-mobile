@@ -7,6 +7,7 @@ import { User } from "@/domain/models/User";
 import { UserRegistrationVo } from "@/domain/valueObjects/UserRegistrationVo";
 import { AuthStorageService } from "@/infrastructure/storage/modules/AuthStorageService";
 import { RegisterUserUseCase } from "@/application/useCases/auth/RegisterUserUseCase";
+import { GoogleAuthService } from "@/infrastructure/auth/GoogleAuthService";
 
 class AuthManager {
   private static instance: AuthManager;
@@ -240,6 +241,32 @@ class AuthManager {
     }
   }
 
+  async loginWithGoogle() {
+    try {
+      this.updateState({ loading: true, error: null });
+
+      const googleResult = await GoogleAuthService.signIn();
+
+      if (!googleResult) {
+        this.updateState({ loading: false });
+        return;
+      }
+
+      const userData = await this.authRepository.loginWithGoogle(
+        googleResult.token,
+        googleResult.userInfo
+      );
+
+      await AuthStorageService.saveUser(userData);
+      await AuthStorageService.saveLoginMethod("google");
+
+      this.updateState({ user: userData, loading: false });
+    } catch (err: any) {
+      this.updateState({ error: err.message, loading: false });
+      throw err;
+    }
+  }
+
   async logout() {
     try {
       this.updateState({ loading: true });
@@ -322,6 +349,7 @@ export const useAuth = () => {
     register: (userData: UserRegistrationVo) => authManager.register(userData),
     login: (email: string, password: string) =>
       authManager.login(email, password),
+    loginWithGoogle: () => authManager.loginWithGoogle(),
     logout: () => authManager.logout(),
     checkIsGoogleUser: () => authManager.checkIsGoogleUser(),
 

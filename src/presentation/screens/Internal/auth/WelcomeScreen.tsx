@@ -10,9 +10,11 @@ import {
 } from "react-native-paper";
 import { useFocusEffect } from "@react-navigation/native";
 import { OptimizedParticlesBackground } from "@/presentation/components/widgets/animated/OptimizedParticlesBackground";
+import { useAuth } from "@/application/hooks/useAuth";
 
 export const WelcomeScreen = ({ navigation }: { navigation: any }) => {
   const theme = useTheme();
+  const { loginWithGoogle, loading } = useAuth();
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
@@ -29,10 +31,13 @@ export const WelcomeScreen = ({ navigation }: { navigation: any }) => {
     }, [])
   );
   
-  const handleGoogleLogin = () => {
-    if (isNavigating) return;
-    showSnackbar("Redirigiendo a Google...");
-    // navigation.navigate('GoogleLogin'); // Descomenta cuando tengas la pantalla
+  const handleGoogleLogin = async () => {
+    if (isNavigating || loading) return;
+    try {
+      await loginWithGoogle();
+    } catch (error: any) {
+      showSnackbar(error?.message || "Error al ingresar con Google");
+    }
   };
 
   const handleEmailLogin = () => {
@@ -168,11 +173,12 @@ export const WelcomeScreen = ({ navigation }: { navigation: any }) => {
               <Button
                 mode="contained"
                 onPress={handleGoogleLogin}
-                disabled={isNavigating}
+                disabled={isNavigating || loading}
+                loading={loading}
                 style={{
                   borderRadius: 10,
                   backgroundColor: theme.colors.primary,
-                  opacity: isNavigating ? 0.7 : 1,
+                  opacity: isNavigating || loading ? 0.7 : 1,
                 }}
                 labelStyle={{
                   fontSize: 14,

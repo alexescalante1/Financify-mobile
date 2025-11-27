@@ -30,6 +30,10 @@
     "extra": {
       "eas": {
         "projectId": "c1c13e68-1cf0-41e3-8c80-0c3c25267953"
+      },
+      "googleAuth": {
+        "webClientId": "496653184884-mc6kslui49hjdeab0mejqk0u5cagt0cr.apps.googleusercontent.com",
+        "iosClientId": ""
       }
     },
     "plugins": [

@@ -34,7 +34,7 @@ const loginValidationSchema = Yup.object().shape({
 
 export const LoginScreen = ({ navigation }: { navigation: any }) => {
   const theme = useTheme();
-  const { login, loading: authLoading } = useAuth();
+  const { login, loginWithGoogle, loading: authLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -57,6 +57,19 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
   const showSnackbar = (message: string) => {
     setSnackbarMessage(message);
     setSnackbarVisible(true);
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+      showSnackbar("Autenticado con Google!");
+    } catch (error: any) {
+      if (error?.message) {
+        showSnackbar(error.message);
+      } else {
+        showSnackbar("Error al iniciar sesion con Google");
+      }
+    }
   };
 
   const onSubmit = async (values: LoginFormData) => {
@@ -164,6 +177,31 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
                   Ingresa tus credenciales para continuar
                 </Text>
               </View>
+
+              <Button
+                mode="contained-tonal"
+                onPress={handleGoogleLogin}
+                icon="google"
+                disabled={loading}
+                style={{
+                  borderRadius: 10,
+                  marginBottom: 12,
+                }}
+                labelStyle={{ fontSize: 14, fontWeight: "600" }}
+                contentStyle={{ paddingVertical: 4 }}
+              >
+                Continuar con Google
+              </Button>
+              <Text
+                style={{
+                  textAlign: "center",
+                  marginBottom: 12,
+                  color: theme.colors.onSurfaceVariant,
+                  fontSize: 13,
+                }}
+              >
+                o usa tu correo electr��nico
+              </Text>
 
               <Formik
                 initialValues={initialValues}
