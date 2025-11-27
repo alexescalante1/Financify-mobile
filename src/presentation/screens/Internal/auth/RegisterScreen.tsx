@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   KeyboardAvoidingView,
@@ -25,6 +25,28 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRegister } from "@/application/hooks/auth/useRegister";
 import { CurrencyType } from "@/domain/types/CurrencyType";
 import { GenderType } from "@/domain/types/GenderType";
+
+const SectionTitle = ({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle?: string;
+}) => (
+  <View style={{ marginBottom: subtitle ? 6 : 12 }}>
+    <Text variant="titleSmall" style={{ fontWeight: "600" }}>
+      {title}
+    </Text>
+    {subtitle ? (
+      <Text
+        variant="bodySmall"
+        style={{ color: "#8a8a8a", marginTop: 2, letterSpacing: 0.2 }}
+      >
+        {subtitle}
+      </Text>
+    ) : null}
+  </View>
+);
 
 interface RegisterFormData {
   fullName: string;
@@ -82,10 +104,23 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
 
-  const currencies = [
-    { code: "PEN" as CurrencyType, name: "Soles Peruanos", symbol: "S/", flag: "🇵🇪" },
-    { code: "USD" as CurrencyType, name: "Dólares Americanos", symbol: "$", flag: "🇺🇸" },
-  ];
+  const currencies = useMemo(
+    () => [
+      {
+        code: "PEN" as CurrencyType,
+        name: "Soles Peruanos",
+        symbol: "S/",
+        flag: "🇵🇪",
+      },
+      {
+        code: "USD" as CurrencyType,
+        name: "Dólares Americanos",
+        symbol: "$",
+        flag: "🇺🇸",
+      },
+    ],
+    []
+  );
 
   const initialValues: RegisterFormData = {
     fullName: "",
@@ -184,6 +219,8 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
           initialValues={initialValues}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
+          validateOnChange={false}
+          validateOnBlur={true}
         >
           {({
             values,
@@ -202,6 +239,10 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
             >
               <Card mode="elevated" style={{ borderRadius: 16, elevation: 3 }}>
                 <Card.Content style={{ padding: 20 }}>
+                  <SectionTitle
+                    title="Datos personales"
+                    subtitle="Ingresa tu información básica"
+                  />
                   {/* Nombre */}
                   <View style={{ marginBottom: 2 }}>
                     <TextInput
@@ -362,6 +403,10 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                     </Surface>
                   </View>
 
+                  <SectionTitle
+                    title="Preferencias"
+                    subtitle="Elige cómo quieres visualizar tus finanzas"
+                  />
                   {/* Moneda */}
                   <View style={{ marginBottom: 16 }}>
                     <Text

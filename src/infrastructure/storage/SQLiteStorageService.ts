@@ -153,12 +153,13 @@ export class SQLiteStorageService {
   static async setMultiple(items: Record<string, any>): Promise<boolean> {
     try {
       await this.ensureInit();
-      
-      await this.db!.withTransactionAsync(async () => {
-        for (const [key, value] of Object.entries(items)) {
-          await this.set(key, value);
+
+      for (const [key, value] of Object.entries(items)) {
+        const success = await this.set(key, value);
+        if (!success) {
+          throw new Error(`Failed to save key ${key}`);
         }
-      });
+      }
 
       return true;
     } catch (error) {
@@ -178,12 +179,13 @@ export class SQLiteStorageService {
   static async removeMultiple(keys: string[]): Promise<boolean> {
     try {
       await this.ensureInit();
-      
-      await this.db!.withTransactionAsync(async () => {
-        for (const key of keys) {
-          await this.remove(key);
+
+      for (const key of keys) {
+        const success = await this.remove(key);
+        if (!success) {
+          throw new Error(`Failed to remove key ${key}`);
         }
-      });
+      }
 
       return true;
     } catch (error) {

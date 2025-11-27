@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { View, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import {
   Text,
@@ -41,6 +41,15 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
   const [isNavigating, setIsNavigating] = useState(false);
 
   const loading = authLoading;
+  const labelColors = useMemo(
+    () => ({
+      colors: {
+        onSurfaceVariant: theme.colors.onBackground,
+        primary: theme.colors.primary,
+      },
+    }),
+    [theme.colors.onBackground, theme.colors.primary]
+  );
 
   const initialValues: LoginFormData = {
     email: "",
@@ -108,7 +117,7 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
           disabled={isNavigating}
           style={{
             opacity: isNavigating ? 0.5 : 1,
-            backgroundColor: theme.colors.surface, // Fondo solo en el botón
+            backgroundColor: theme.colors.surface,
             borderRadius: 20,
             elevation: 2,
           }}
@@ -120,10 +129,7 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
             color: theme.colors.onBackground,
             flex: 1,
             textAlign: "center",
-            marginRight: 48, // Compensar el botón
-            textShadowColor: "rgba(255,255,255,0.8)", // Sombra para legibilidad
-            textShadowOffset: { width: 0, height: 1 },
-            textShadowRadius: 3,
+            marginRight: 48,
           }}
         >
           Iniciar Sesión
@@ -178,35 +184,45 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
                 </Text>
               </View>
 
-              <Button
-                mode="contained-tonal"
-                onPress={handleGoogleLogin}
-                icon="google"
-                disabled={loading}
+              <View
                 style={{
-                  borderRadius: 10,
                   marginBottom: 12,
-                }}
-                labelStyle={{ fontSize: 14, fontWeight: "600" }}
-                contentStyle={{ paddingVertical: 4 }}
-              >
-                Continuar con Google
-              </Button>
-              <Text
-                style={{
-                  textAlign: "center",
-                  marginBottom: 12,
-                  color: theme.colors.onSurfaceVariant,
-                  fontSize: 13,
+                  backgroundColor: theme.colors.surfaceVariant,
+                  borderRadius: 12,
+                  padding: 12,
                 }}
               >
-                o usa tu correo electr��nico
-              </Text>
+                <Button
+                  mode="contained-tonal"
+                  onPress={handleGoogleLogin}
+                  icon="google"
+                  disabled={loading}
+                  style={{
+                    borderRadius: 10,
+                    marginBottom: 6,
+                  }}
+                  labelStyle={{ fontSize: 14, fontWeight: "600" }}
+                  contentStyle={{ paddingVertical: 4 }}
+                >
+                  Continuar con Google
+                </Button>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: theme.colors.onSurfaceVariant,
+                    fontSize: 13,
+                  }}
+                >
+                  o usa tu correo electrónico
+                </Text>
+              </View>
 
               <Formik
                 initialValues={initialValues}
                 validationSchema={loginValidationSchema}
                 onSubmit={onSubmit}
+                validateOnChange={false}
+                validateOnBlur={true}
               >
                 {({
                   handleChange,
@@ -222,6 +238,7 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
 
                     <TextInput
                       label="Correo electrónico"
+                      theme={labelColors}
                       value={values.email}
                       onChangeText={handleChange("email")}
                       onBlur={handleBlur("email")}
@@ -242,6 +259,7 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
                     {/* Contraseña */}
                     <TextInput
                       label="Contraseña"
+                      theme={labelColors}
                       value={values.password}
                       onChangeText={handleChange("password")}
                       onBlur={handleBlur("password")}
