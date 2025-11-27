@@ -28,7 +28,7 @@ export const WelcomeScreen = ({ navigation }: { navigation: any }) => {
       setIsNavigating(false);
     }, [])
   );
-
+  
   const handleGoogleLogin = () => {
     if (isNavigating) return;
     showSnackbar("Redirigiendo a Google...");
