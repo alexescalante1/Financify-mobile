@@ -26,26 +26,23 @@ import { useRegister } from "@/application/hooks/auth/useRegister";
 import { CurrencyType } from "@/domain/types/CurrencyType";
 import { GenderType } from "@/domain/types/GenderType";
 
-const SectionTitle = ({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle?: string;
-}) => (
-  <View style={{ marginBottom: subtitle ? 6 : 12 }}>
-    <Text variant="titleSmall" style={{ fontWeight: "600" }}>
-      {title}
-    </Text>
-    {subtitle ? (
-      <Text
-        variant="bodySmall"
-        style={{ color: "#8a8a8a", marginTop: 2, letterSpacing: 0.2 }}
-      >
-        {subtitle}
+// Componente SectionTitle memoizado
+const SectionTitle = React.memo(
+  ({ title, subtitle }: { title: string; subtitle?: string }) => (
+    <View style={{ marginBottom: subtitle ? 6 : 12 }}>
+      <Text variant="titleSmall" style={{ fontWeight: "600" }}>
+        {title}
       </Text>
-    ) : null}
-  </View>
+      {subtitle ? (
+        <Text
+          variant="bodySmall"
+          style={{ color: "#8a8a8a", marginTop: 2, letterSpacing: 0.2 }}
+        >
+          {subtitle}
+        </Text>
+      ) : null}
+    </View>
+  )
 );
 
 interface RegisterFormData {
@@ -58,6 +55,7 @@ interface RegisterFormData {
   currency: CurrencyType;
 }
 
+// Schema y valores iniciales fuera del componente
 const validationSchema = Yup.object().shape({
   fullName: Yup.string()
     .min(2, "Debe tener al menos 2 caracteres")
@@ -94,6 +92,33 @@ const validationSchema = Yup.object().shape({
     .required("Selecciona tu moneda principal"),
 });
 
+const initialValues: RegisterFormData = {
+  fullName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  birthDate: new Date(2000, 0, 1),
+  gender: "masculino",
+  currency: "PEN",
+};
+
+const CURRENCIES = [
+  {
+    code: "PEN" as CurrencyType,
+    name: "Soles Peruanos",
+    symbol: "S/",
+    flag: "🇵🇪",
+  },
+  {
+    code: "USD" as CurrencyType,
+    name: "Dólares Americanos",
+    symbol: "$",
+    flag: "🇺🇸",
+  },
+];
+
+const GENDERS: GenderType[] = ["masculino", "femenino"];
+
 export const RegisterScreen = ({ navigation }: { navigation: any }) => {
   const theme = useTheme();
   const { register, loading, error } = useRegister();
@@ -104,92 +129,233 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
 
-  const currencies = useMemo(
-    () => [
-      {
-        code: "PEN" as CurrencyType,
-        name: "Soles Peruanos",
-        symbol: "S/",
-        flag: "🇵🇪",
-      },
-      {
-        code: "USD" as CurrencyType,
-        name: "Dólares Americanos",
-        symbol: "$",
-        flag: "🇺🇸",
-      },
-    ],
-    []
-  );
-
-  const initialValues: RegisterFormData = {
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    birthDate: new Date(2000, 0, 1),
-    gender: "masculino",
-    currency: "PEN",
-  };
-
+  // Reset navigation state when screen is focused
   useFocusEffect(
     useCallback(() => {
       setIsNavigating(false);
     }, [])
   );
 
-  const showSnackbar = (message: string) => {
+  // Callbacks memoizados
+  const showSnackbar = useCallback((message: string) => {
     setSnackbarMessage(message);
     setSnackbarVisible(true);
-  };
+  }, []);
 
-  const formatDate = (date: Date): string =>
-    date.toLocaleDateString("es-PE", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  const dismissSnackbar = useCallback(() => {
+    setSnackbarVisible(false);
+  }, []);
 
-  const handleGoBack = () => {
+  const formatDate = useCallback(
+    (date: Date): string =>
+      date.toLocaleDateString("es-PE", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+    []
+  );
+
+  const handleGoBack = useCallback(() => {
     if (isNavigating || loading) return;
     navigation.goBack();
-  };
+  }, [isNavigating, loading, navigation]);
 
-  const handleGoToLogin = () => {
+  const handleGoToLogin = useCallback(() => {
     if (isNavigating || loading) return;
     setIsNavigating(true);
     navigation.navigate("Login");
-  };
+  }, [isNavigating, loading, navigation]);
 
-  const handleSubmit = async (values: RegisterFormData) => {
-    try {
-      await register({
-        email: values.email.trim().toLowerCase(),
-        password: values.password,
-        fullName: values.fullName.trim(),
-        gender: values.gender,
-        birthDate: values.birthDate,
-        currency: values.currency,
-      });
+  const handleSubmit = useCallback(
+    async (values: RegisterFormData) => {
+      try {
+        await register({
+          email: values.email.trim().toLowerCase(),
+          password: values.password,
+          fullName: values.fullName.trim(),
+          gender: values.gender,
+          birthDate: values.birthDate,
+          currency: values.currency,
+        });
 
-      showSnackbar("¡Cuenta creada exitosamente! Bienvenido a Financify");
-    } catch (error: any) {
-      showSnackbar(error.message || "Error al crear la cuenta");
-    }
-  };
+        showSnackbar("¡Cuenta creada exitosamente! Bienvenido a Financify");
+      } catch (error: any) {
+        showSnackbar(error.message || "Error al crear la cuenta");
+      }
+    },
+    [register, showSnackbar]
+  );
+
+  const togglePassword = useCallback(() => {
+    setShowPassword((prev) => !prev);
+  }, []);
+
+  const toggleConfirmPassword = useCallback(() => {
+    setShowConfirmPassword((prev) => !prev);
+  }, []);
+
+  const openDatePicker = useCallback(() => {
+    setShowDatePicker(true);
+  }, []);
+
+  const closeDatePicker = useCallback(() => {
+    setShowDatePicker(false);
+  }, []);
+
+  // Estilos memoizados
+  const styles = useMemo(
+    () => ({
+      container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+      },
+      headerContainer: {
+        flexDirection: "row" as const,
+        alignItems: "center" as const,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        backgroundColor: theme.colors.background,
+      },
+      headerTitle: {
+        fontWeight: "600" as const,
+        color: theme.colors.onBackground,
+        flex: 1,
+        textAlign: "center" as const,
+        marginRight: 48,
+      },
+      keyboardView: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+      },
+      scrollContent: {
+        padding: 20,
+        paddingTop: 10,
+      },
+      card: {
+        borderRadius: 16,
+        elevation: 3,
+      },
+      cardContent: {
+        padding: 20,
+      },
+      inputContainer: {
+        marginBottom: 2,
+      },
+      genderText: {
+        marginBottom: 8,
+        color: theme.colors.onBackground,
+        fontWeight: "500" as const,
+      },
+      genderSurface: {
+        padding: 12,
+        borderRadius: 10,
+        backgroundColor: theme.colors.surfaceVariant,
+      },
+      genderRow: {
+        flexDirection: "row" as const,
+        justifyContent: "space-around" as const,
+      },
+      genderItem: {
+        flexDirection: "row" as const,
+        alignItems: "center" as const,
+      },
+      currencyText: {
+        marginBottom: 8,
+        fontWeight: "500" as const,
+        color: theme.colors.onBackground,
+      },
+      currencyRow: {
+        flexDirection: "row" as const,
+        gap: 12,
+        justifyContent: "space-between" as const,
+      },
+      registerButton: {
+        borderRadius: 10,
+        marginBottom: 2,
+      },
+      registerButtonContent: {
+        paddingVertical: 4,
+      },
+      registerButtonLabel: {
+        fontSize: 15,
+        fontWeight: "600" as const,
+      },
+      loginContainer: {
+        flexDirection: "row" as const,
+        justifyContent: "center" as const,
+        alignItems: "center" as const,
+      },
+      loginText: {
+        color: theme.colors.onSurfaceVariant,
+        fontSize: 14,
+      },
+      loginButtonLabel: {
+        fontSize: 14,
+        fontWeight: "600" as const,
+      },
+    }),
+    [theme.colors]
+  );
+
+  // Función para renderizar el botón de moneda
+  const renderCurrencyButton = useCallback(
+    (
+      currency: typeof CURRENCIES[0],
+      isSelected: boolean,
+      onPress: () => void
+    ) => (
+      <TouchableOpacity
+        key={currency.code}
+        onPress={onPress}
+        style={{
+          flex: 1,
+          backgroundColor: isSelected
+            ? theme.colors.primaryContainer
+            : theme.colors.surfaceVariant,
+          borderColor: isSelected
+            ? theme.colors.primary
+            : theme.colors.outline,
+          borderWidth: 2,
+          borderRadius: 12,
+          padding: 16,
+          alignItems: "center",
+          elevation: isSelected ? 2 : 0,
+        }}
+        activeOpacity={0.7}
+      >
+        <Text style={{ fontSize: 24, marginBottom: 4 }}>{currency.flag}</Text>
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: "bold",
+            color: isSelected ? theme.colors.primary : theme.colors.onSurface,
+            marginBottom: 2,
+          }}
+        >
+          {currency.symbol}
+        </Text>
+        <Text
+          style={{
+            fontSize: 12,
+            color: isSelected
+              ? theme.colors.primary
+              : theme.colors.onSurfaceVariant,
+            textAlign: "center",
+            fontWeight: "500",
+          }}
+        >
+          {currency.code}
+        </Text>
+      </TouchableOpacity>
+    ),
+    [theme.colors]
+  );
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <View style={styles.container}>
       {/* Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: 20,
-          paddingVertical: 12,
-          backgroundColor: theme.colors.background,
-        }}
-      >
+      <View style={styles.headerContainer}>
         <IconButton
           icon="arrow-left"
           size={24}
@@ -197,23 +363,14 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
           disabled={isNavigating || loading}
           style={{ opacity: isNavigating || loading ? 0.5 : 1 }}
         />
-        <Text
-          variant="titleLarge"
-          style={{
-            fontWeight: "600",
-            color: theme.colors.onBackground,
-            flex: 1,
-            textAlign: "center",
-            marginRight: 48,
-          }}
-        >
+        <Text variant="titleLarge" style={styles.headerTitle}>
           Crear Cuenta
         </Text>
       </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
+        style={styles.keyboardView}
       >
         <Formik
           initialValues={initialValues}
@@ -233,18 +390,19 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
             isValid,
           }) => (
             <ScrollView
-              contentContainerStyle={{ padding: 20, paddingTop: 10 }}
+              contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <Card mode="elevated" style={{ borderRadius: 16, elevation: 3 }}>
-                <Card.Content style={{ padding: 20 }}>
+              <Card mode="elevated" style={styles.card}>
+                <Card.Content style={styles.cardContent}>
                   <SectionTitle
                     title="Datos personales"
                     subtitle="Ingresa tu información básica"
                   />
+
                   {/* Nombre */}
-                  <View style={{ marginBottom: 2 }}>
+                  <View style={styles.inputContainer}>
                     <TextInput
                       label="Nombre Completo"
                       value={values.fullName}
@@ -254,6 +412,7 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                       autoCapitalize="words"
                       error={!!(touched.fullName && errors.fullName)}
                       left={<TextInput.Icon icon="account" />}
+                      editable={!loading}
                     />
                     <HelperText
                       type="error"
@@ -264,7 +423,7 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                   </View>
 
                   {/* Email */}
-                  <View style={{ marginBottom: 2 }}>
+                  <View style={styles.inputContainer}>
                     <TextInput
                       label="Correo Electrónico"
                       value={values.email}
@@ -276,6 +435,7 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                       autoCorrect={false}
                       error={!!(touched.email && errors.email)}
                       left={<TextInput.Icon icon="email" />}
+                      editable={!loading}
                     />
                     <HelperText
                       type="error"
@@ -286,7 +446,7 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                   </View>
 
                   {/* Contraseña */}
-                  <View style={{ marginBottom: 2 }}>
+                  <View style={styles.inputContainer}>
                     <TextInput
                       label="Contraseña"
                       value={values.password}
@@ -299,9 +459,10 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                       right={
                         <TextInput.Icon
                           icon={showPassword ? "eye-off" : "eye"}
-                          onPress={() => setShowPassword(!showPassword)}
+                          onPress={togglePassword}
                         />
                       }
+                      editable={!loading}
                     />
                     <HelperText
                       type="error"
@@ -312,7 +473,7 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                   </View>
 
                   {/* Confirmar Contraseña */}
-                  <View style={{ marginBottom: 2 }}>
+                  <View style={styles.inputContainer}>
                     <TextInput
                       label="Confirmar Contraseña"
                       value={values.confirmPassword}
@@ -320,28 +481,34 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                       onBlur={handleBlur("confirmPassword")}
                       mode="outlined"
                       secureTextEntry={!showConfirmPassword}
-                      error={!!(touched.confirmPassword && errors.confirmPassword)}
+                      error={
+                        !!(touched.confirmPassword && errors.confirmPassword)
+                      }
                       left={<TextInput.Icon icon="lock-check" />}
                       right={
                         <TextInput.Icon
                           icon={showConfirmPassword ? "eye-off" : "eye"}
-                          onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                          onPress={toggleConfirmPassword}
                         />
                       }
+                      editable={!loading}
                     />
                     <HelperText
                       type="error"
-                      visible={!!(touched.confirmPassword && errors.confirmPassword)}
+                      visible={
+                        !!(touched.confirmPassword && errors.confirmPassword)
+                      }
                     >
                       {errors.confirmPassword}
                     </HelperText>
                   </View>
 
                   {/* Fecha Nacimiento */}
-                  <View style={{ marginBottom: 2 }}>
+                  <View style={styles.inputContainer}>
                     <TouchableOpacity
-                      onPress={() => setShowDatePicker(true)}
+                      onPress={openDatePicker}
                       activeOpacity={0.8}
+                      disabled={loading}
                     >
                       <TextInput
                         label="Fecha de Nacimiento"
@@ -363,37 +530,24 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                   </View>
 
                   {/* Género */}
-                  <View style={{ marginBottom: 2 }}>
-                    <Text
-                      variant="bodyLarge"
-                      style={{
-                        marginBottom: 8,
-                        color: theme.colors.onBackground,
-                        fontWeight: "500",
-                      }}
-                    >
+                  <View style={styles.inputContainer}>
+                    <Text variant="bodyLarge" style={styles.genderText}>
                       Género
                     </Text>
-                    <Surface
-                      style={{
-                        padding: 12,
-                        borderRadius: 10,
-                        backgroundColor: theme.colors.surfaceVariant,
-                      }}
-                      elevation={1}
-                    >
+                    <Surface style={styles.genderSurface} elevation={1}>
                       <RadioButton.Group
-                        onValueChange={(value) => setFieldValue("gender", value)}
+                        onValueChange={(value) =>
+                          setFieldValue("gender", value)
+                        }
                         value={values.gender}
                       >
-                        <View style={{ flexDirection: "row", justifyContent: "space-around" }}>
-                          {(["masculino", "femenino"] as GenderType[]).map((g) => (
-                            <View
-                              key={g}
-                              style={{ flexDirection: "row", alignItems: "center" }}
-                            >
-                              <RadioButton value={g} />
-                              <Text style={{ color: theme.colors.onBackground }}>
+                        <View style={styles.genderRow}>
+                          {GENDERS.map((g) => (
+                            <View key={g} style={styles.genderItem}>
+                              <RadioButton value={g} disabled={loading} />
+                              <Text
+                                style={{ color: theme.colors.onBackground }}
+                              >
                                 {g.charAt(0).toUpperCase() + g.slice(1)}
                               </Text>
                             </View>
@@ -407,71 +561,21 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                     title="Preferencias"
                     subtitle="Elige cómo quieres visualizar tus finanzas"
                   />
+
                   {/* Moneda */}
                   <View style={{ marginBottom: 16 }}>
-                    <Text
-                      variant="bodyLarge"
-                      style={{
-                        marginBottom: 8,
-                        fontWeight: "500",
-                        color: theme.colors.onBackground,
-                      }}
-                    >
+                    <Text variant="bodyLarge" style={styles.currencyText}>
                       Moneda Principal
                     </Text>
 
-                    <View style={{ flexDirection: "row", gap: 12, justifyContent: "space-between" }}>
-                      {currencies.map((currency) => (
-                        <TouchableOpacity
-                          key={currency.code}
-                          onPress={() => setFieldValue("currency", currency.code)}
-                          style={{
-                            flex: 1,
-                            backgroundColor:
-                              values.currency === currency.code
-                                ? theme.colors.primaryContainer
-                                : theme.colors.surfaceVariant,
-                            borderColor:
-                              values.currency === currency.code
-                                ? theme.colors.primary
-                                : theme.colors.outline,
-                            borderWidth: 2,
-                            borderRadius: 12,
-                            padding: 16,
-                            alignItems: "center",
-                            elevation: values.currency === currency.code ? 2 : 0,
-                          }}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={{ fontSize: 24, marginBottom: 4 }}>{currency.flag}</Text>
-                          <Text
-                            style={{
-                              fontSize: 18,
-                              fontWeight: "bold",
-                              color:
-                                values.currency === currency.code
-                                  ? theme.colors.primary
-                                  : theme.colors.onSurface,
-                              marginBottom: 2,
-                            }}
-                          >
-                            {currency.symbol}
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color:
-                                values.currency === currency.code
-                                  ? theme.colors.primary
-                                  : theme.colors.onSurfaceVariant,
-                              textAlign: "center",
-                              fontWeight: "500",
-                            }}
-                          >
-                            {currency.code}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                    <View style={styles.currencyRow}>
+                      {CURRENCIES.map((currency) =>
+                        renderCurrencyButton(
+                          currency,
+                          values.currency === currency.code,
+                          () => setFieldValue("currency", currency.code)
+                        )
+                      )}
                     </View>
 
                     <HelperText type="info" visible={true}>
@@ -486,33 +590,26 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                     loading={loading}
                     disabled={loading || !isValid}
                     icon="account-plus"
-                    style={{ borderRadius: 10, marginBottom: 2 }}
-                    labelStyle={{ fontSize: 15, fontWeight: "600" }}
-                    contentStyle={{ paddingVertical: 4 }}
+                    style={styles.registerButton}
+                    labelStyle={styles.registerButtonLabel}
+                    contentStyle={styles.registerButtonContent}
                   >
                     {loading ? "Creando cuenta..." : "Crear Cuenta"}
                   </Button>
 
                   {/* Ya tienes cuenta */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: 14 }}>
+                  <View style={styles.loginContainer}>
+                    <Text style={styles.loginText}>
                       ¿Ya tienes cuenta?{" "}
                     </Text>
                     <Button
                       mode="text"
                       onPress={handleGoToLogin}
                       disabled={loading || isNavigating}
-                      labelStyle={{
-                        fontSize: 14,
-                        fontWeight: "600",
-                        opacity: loading || isNavigating ? 0.5 : 1,
-                      }}
+                      labelStyle={[
+                        styles.loginButtonLabel,
+                        { opacity: loading || isNavigating ? 0.5 : 1 },
+                      ]}
                     >
                       Iniciar Sesión
                     </Button>
@@ -527,7 +624,7 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
                   mode="date"
                   display="default"
                   onChange={(event, selectedDate) => {
-                    setShowDatePicker(false);
+                    closeDatePicker();
                     if (selectedDate) setFieldValue("birthDate", selectedDate);
                   }}
                   maximumDate={new Date()}
@@ -542,9 +639,9 @@ export const RegisterScreen = ({ navigation }: { navigation: any }) => {
       {/* Snackbar */}
       <Snackbar
         visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
+        onDismiss={dismissSnackbar}
         duration={4000}
-        action={{ label: "OK", onPress: () => setSnackbarVisible(false) }}
+        action={{ label: "OK", onPress: dismissSnackbar }}
       >
         {snackbarMessage}
       </Snackbar>

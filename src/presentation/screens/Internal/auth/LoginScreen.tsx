@@ -22,7 +22,7 @@ interface LoginFormData {
   password: string;
 }
 
-// Esquema de validación con Yup
+// Esquema de validación con Yup (fuera del componente para evitar recreación)
 const loginValidationSchema = Yup.object().shape({
   email: Yup.string()
     .email("Ingresa un email válido")
@@ -32,6 +32,12 @@ const loginValidationSchema = Yup.object().shape({
     .required("La contraseña es requerida"),
 });
 
+// Valores iniciales (fuera del componente)
+const initialValues: LoginFormData = {
+  email: "",
+  password: "",
+};
+
 export const LoginScreen = ({ navigation }: { navigation: any }) => {
   const theme = useTheme();
   const { login, loginWithGoogle, loading: authLoading } = useAuth();
@@ -40,7 +46,7 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
 
-  const loading = authLoading;
+  // Memoizar colores del tema
   const labelColors = useMemo(
     () => ({
       colors: {
@@ -51,172 +57,234 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
     [theme.colors.onBackground, theme.colors.primary]
   );
 
-  const initialValues: LoginFormData = {
-    email: "",
-    password: "",
-  };
-
   // Reset navigation state when screen is focused
   useFocusEffect(
     useCallback(() => {
       setIsNavigating(false);
-    }, [theme.colors.background])
+    }, [])
   );
 
-  const showSnackbar = (message: string) => {
+  // Memoizar función showSnackbar
+  const showSnackbar = useCallback((message: string) => {
     setSnackbarMessage(message);
     setSnackbarVisible(true);
-  };
+  }, []);
 
-  const handleGoogleLogin = async () => {
+  // Memoizar handlers
+  const handleGoogleLogin = useCallback(async () => {
     try {
       await loginWithGoogle();
       showSnackbar("Autenticado con Google!");
     } catch (error: any) {
-      if (error?.message) {
-        showSnackbar(error.message);
-      } else {
-        showSnackbar("Error al iniciar sesion con Google");
+      showSnackbar(error?.message || "Error al iniciar sesión con Google");
+    }
+  }, [loginWithGoogle, showSnackbar]);
+
+  const onSubmit = useCallback(
+    async (values: LoginFormData) => {
+      try {
+        await login(values.email.trim().toLowerCase(), values.password);
+        showSnackbar("¡Bienvenido de vuelta!");
+      } catch (error: any) {
+        showSnackbar(error.message || "Error al iniciar sesión");
       }
-    }
-  };
+    },
+    [login, showSnackbar]
+  );
 
-  const onSubmit = async (values: LoginFormData) => {
-    try {
-      await login(values.email.trim().toLowerCase(), values.password);
-      showSnackbar("¡Bienvenido de vuelta!");
-    } catch (error: any) {
-      showSnackbar(error.message || "Error al iniciar sesión");
-    }
-  };
-
-  const handleGoBack = () => {
-    if (isNavigating || loading) return;
-
-    // Navegación inmediata sin ningún delay ni animación
+  const handleGoBack = useCallback(() => {
+    if (isNavigating || authLoading) return;
     navigation.goBack();
-  };
+  }, [isNavigating, authLoading, navigation]);
+
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword((prev) => !prev);
+  }, []);
+
+  const handleForgotPassword = useCallback(() => {
+    showSnackbar("Función próximamente");
+  }, [showSnackbar]);
+
+  const navigateToRegister = useCallback(() => {
+    if (!isNavigating) {
+      navigation.navigate("Register");
+    }
+  }, [isNavigating, navigation]);
+
+  const dismissSnackbar = useCallback(() => {
+    setSnackbarVisible(false);
+  }, []);
+
+  // Memoizar estilos estáticos
+  const styles = useMemo(
+    () => ({
+      headerContainer: {
+        flexDirection: "row" as const,
+        alignItems: "center" as const,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        backgroundColor: "transparent",
+        elevation: 0,
+      },
+      backButton: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: 20,
+        elevation: 2,
+      },
+      headerTitle: {
+        fontWeight: "600" as const,
+        color: theme.colors.onBackground,
+        flex: 1,
+        textAlign: "center" as const,
+        marginRight: 48,
+      },
+      keyboardView: {
+        flex: 1,
+        backgroundColor: "transparent",
+      },
+      scrollContent: {
+        flexGrow: 1,
+        padding: 20,
+        justifyContent: "center" as const,
+        paddingTop: 0,
+      },
+      card: {
+        borderRadius: 16,
+        elevation: 3,
+        backgroundColor: theme.colors.surface,
+      },
+      cardContent: {
+        padding: 20,
+      },
+      logoContainer: {
+        alignItems: "center" as const,
+        marginBottom: 16,
+      },
+      avatar: {
+        backgroundColor: theme.colors.primary,
+        elevation: 3,
+        marginBottom: 8,
+      },
+      subtitle: {
+        textAlign: "center" as const,
+        color: theme.colors.onSurfaceVariant,
+      },
+      googleContainer: {
+        marginBottom: 12,
+        backgroundColor: theme.colors.surfaceVariant,
+        borderRadius: 12,
+        padding: 12,
+      },
+      googleButton: {
+        borderRadius: 10,
+        marginBottom: 6,
+      },
+      googleButtonContent: {
+        paddingVertical: 4,
+      },
+      googleButtonLabel: {
+        fontSize: 14,
+        fontWeight: "600" as const,
+      },
+      dividerText: {
+        textAlign: "center" as const,
+        color: theme.colors.onSurfaceVariant,
+        fontSize: 13,
+      },
+      forgotButton: {
+        alignSelf: "flex-end" as const,
+        marginBottom: 12,
+      },
+      forgotButtonLabel: {
+        fontSize: 13,
+      },
+      loginButton: {
+        borderRadius: 10,
+        marginBottom: 2,
+      },
+      loginButtonContent: {
+        paddingVertical: 4,
+      },
+      loginButtonLabel: {
+        fontSize: 15,
+        fontWeight: "600" as const,
+      },
+      registerContainer: {
+        flexDirection: "row" as const,
+        justifyContent: "center" as const,
+        alignItems: "center" as const,
+      },
+      registerText: {
+        color: theme.colors.onSurfaceVariant,
+        fontSize: 14,
+      },
+      registerButtonLabel: {
+        fontSize: 14,
+        fontWeight: "600" as const,
+      },
+    }),
+    [theme.colors]
+  );
 
   return (
     <OptimizedParticlesBackground particleCount={6} enabled={true}>
-      {/* Header fijo arriba */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: 20,
-          paddingVertical: 12,
-          backgroundColor: "transparent", // Transparente para ver partículas
-          elevation: 0,
-        }}
-      >
+      {/* Header */}
+      <View style={styles.headerContainer}>
         <IconButton
           icon="arrow-left"
           size={24}
           onPress={handleGoBack}
           disabled={isNavigating}
-          style={{
-            opacity: isNavigating ? 0.5 : 1,
-            backgroundColor: theme.colors.surface,
-            borderRadius: 20,
-            elevation: 2,
-          }}
+          style={[
+            styles.backButton,
+            { opacity: isNavigating ? 0.5 : 1 },
+          ]}
         />
-        <Text
-          variant="titleLarge"
-          style={{
-            fontWeight: "600",
-            color: theme.colors.onBackground,
-            flex: 1,
-            textAlign: "center",
-            marginRight: 48,
-          }}
-        >
+        <Text variant="titleLarge" style={styles.headerTitle}>
           Iniciar Sesión
         </Text>
       </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1, backgroundColor: "transparent" }} // Transparente
+        style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            padding: 20,
-            justifyContent: "center",
-            paddingTop: 0, // Reducido de 40 a 20 para centrar más arriba
-          }}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
-          style={{ backgroundColor: "transparent" }} // Transparente
+          style={styles.keyboardView}
         >
-          {/* Formulario con Formik */}
-          <Card
-            mode="elevated"
-            style={{
-              borderRadius: 16,
-              elevation: 3,
-              backgroundColor: theme.colors.surface, // Asegurar fondo sólido
-            }}
-          >
-            <Card.Content style={{ padding: 20 }}>
-              {/* Logo pequeño */}
-              <View style={{ alignItems: "center", marginBottom: 16 }}>
-                <Avatar.Icon
-                  size={64}
-                  icon="wallet"
-                  style={{
-                    backgroundColor: theme.colors.primary,
-                    elevation: 3,
-                    marginBottom: 8,
-                  }}
-                />
-                <Text
-                  variant="bodyMedium"
-                  style={{
-                    textAlign: "center",
-                    color: theme.colors.onSurfaceVariant,
-                  }}
-                >
+          <Card mode="elevated" style={styles.card}>
+            <Card.Content style={styles.cardContent}>
+              {/* Logo */}
+              <View style={styles.logoContainer}>
+                <Avatar.Icon size={64} icon="wallet" style={styles.avatar} />
+                <Text variant="bodyMedium" style={styles.subtitle}>
                   Ingresa tus credenciales para continuar
                 </Text>
               </View>
 
-              <View
-                style={{
-                  marginBottom: 12,
-                  backgroundColor: theme.colors.surfaceVariant,
-                  borderRadius: 12,
-                  padding: 12,
-                }}
-              >
+              {/* Google Login */}
+              <View style={styles.googleContainer}>
                 <Button
                   mode="contained-tonal"
                   onPress={handleGoogleLogin}
                   icon="google"
-                  disabled={loading}
-                  style={{
-                    borderRadius: 10,
-                    marginBottom: 6,
-                  }}
-                  labelStyle={{ fontSize: 14, fontWeight: "600" }}
-                  contentStyle={{ paddingVertical: 4 }}
+                  disabled={authLoading}
+                  style={styles.googleButton}
+                  labelStyle={styles.googleButtonLabel}
+                  contentStyle={styles.googleButtonContent}
                 >
                   Continuar con Google
                 </Button>
-                <Text
-                  style={{
-                    textAlign: "center",
-                    color: theme.colors.onSurfaceVariant,
-                    fontSize: 13,
-                  }}
-                >
+                <Text style={styles.dividerText}>
                   o usa tu correo electrónico
                 </Text>
               </View>
 
+              {/* Formik */}
               <Formik
                 initialValues={initialValues}
                 validationSchema={loginValidationSchema}
@@ -235,7 +303,6 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
                 }) => (
                   <>
                     {/* Email */}
-
                     <TextInput
                       label="Correo electrónico"
                       theme={labelColors}
@@ -248,6 +315,7 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
                       autoCorrect={false}
                       left={<TextInput.Icon icon="email" />}
                       error={!!(errors.email && touched.email)}
+                      editable={!authLoading}
                     />
                     <HelperText
                       type="error"
@@ -269,10 +337,11 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
                       right={
                         <TextInput.Icon
                           icon={showPassword ? "eye-off" : "eye"}
-                          onPress={() => setShowPassword(!showPassword)}
+                          onPress={togglePasswordVisibility}
                         />
                       }
                       error={!!(errors.password && touched.password)}
+                      editable={!authLoading}
                     />
                     <HelperText
                       type="error"
@@ -281,12 +350,13 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
                       {errors.password}
                     </HelperText>
 
-                    {/* ¿Olvidaste? */}
+                    {/* Olvidaste contraseña */}
                     <Button
                       mode="text"
-                      onPress={() => showSnackbar("Función próximamente")}
-                      style={{ alignSelf: "flex-end", marginBottom: 12 }}
-                      labelStyle={{ fontSize: 13 }}
+                      onPress={handleForgotPassword}
+                      style={styles.forgotButton}
+                      labelStyle={styles.forgotButtonLabel}
+                      disabled={authLoading}
                     >
                       ¿Olvidaste tu contraseña?
                     </Button>
@@ -295,44 +365,29 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
                     <Button
                       mode="contained"
                       onPress={() => handleSubmit()}
-                      loading={loading}
-                      disabled={loading || !isValid}
-                      style={{
-                        borderRadius: 10,
-                        marginBottom: 2,
-                      }}
-                      labelStyle={{ fontSize: 15, fontWeight: "600" }}
+                      loading={authLoading}
+                      disabled={authLoading || !isValid}
+                      style={styles.loginButton}
+                      labelStyle={styles.loginButtonLabel}
                       icon="login"
-                      contentStyle={{ paddingVertical: 4 }}
+                      contentStyle={styles.loginButtonContent}
                     >
-                      {loading ? "Iniciando..." : "Iniciar Sesión"}
+                      {authLoading ? "Iniciando..." : "Iniciar Sesión"}
                     </Button>
 
                     {/* Registro */}
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: theme.colors.onSurfaceVariant,
-                          fontSize: 14,
-                        }}
-                      >
+                    <View style={styles.registerContainer}>
+                      <Text style={styles.registerText}>
                         ¿No tienes cuenta?{" "}
                       </Text>
                       <Button
                         mode="text"
-                        onPress={() => navigation.navigate("Register")}
+                        onPress={navigateToRegister}
                         disabled={isNavigating}
-                        labelStyle={{
-                          fontSize: 14,
-                          fontWeight: "600",
-                          opacity: isNavigating ? 0.5 : 1,
-                        }}
+                        labelStyle={[
+                          styles.registerButtonLabel,
+                          { opacity: isNavigating ? 0.5 : 1 },
+                        ]}
                       >
                         Regístrate
                       </Button>
@@ -348,11 +403,11 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
       {/* Snackbar */}
       <Snackbar
         visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
+        onDismiss={dismissSnackbar}
         duration={4000}
         action={{
           label: "OK",
-          onPress: () => setSnackbarVisible(false),
+          onPress: dismissSnackbar,
         }}
       >
         {snackbarMessage}

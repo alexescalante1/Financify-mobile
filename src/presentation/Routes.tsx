@@ -1,9 +1,9 @@
 import React, { useMemo, useCallback } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import Icon from "react-native-vector-icons/MaterialIcons";
 import { View } from "react-native";
 import { useTheme } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 // Hooks
 import { useAuth } from "../application/hooks/useAuth";
@@ -21,7 +21,7 @@ import CreateWrappedScreen from "@/presentation/components/widgets/wrapper/Creat
 // Screens - Auth
 import { WelcomeScreen } from "./screens/Internal/auth/WelcomeScreen";
 import { LoginScreen } from "./screens/Internal/auth/LoginScreen";
-import { RegisterScreen } from "./screens/Internal/auth/RegisterScreen"; // New - Clean Architecture
+import { RegisterScreen } from "./screens/Internal/auth/RegisterScreen";
 
 // Screens - Main
 import { HomeScreen } from "./screens/Pages/home/HomeScreen";
@@ -53,15 +53,12 @@ const ANIMATION_DURATION = {
 } as const;
 
 const TAB_CONFIGURATION = {
-  Home: { icon: "dashboard", label: "Inicio" },
-  Transactions: { icon: "swap-horiz", label: "Movimientos" },
-  Budget: { icon: "pie-chart", label: "Presupuesto" },
-  AssetsLiabilities: { icon: "business-center", label: "Cuentas" },
-  Profile: { icon: "person", label: "Perfil" },
-} as const satisfies Record<
-  keyof TabParamList,
-  { icon: string; label: string }
->;
+  Home: { icon: "view-dashboard", label: "Inicio" },
+  Transactions: { icon: "swap-horizontal", label: "Movimientos" },
+  Budget: { icon: "chart-pie", label: "Presupuesto" },
+  AssetsLiabilities: { icon: "briefcase", label: "Cuentas" },
+  Profile: { icon: "account", label: "Perfil" },
+} as const;
 
 // Navigators
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -69,22 +66,14 @@ const Tab = createBottomTabNavigator<TabParamList>();
 
 // Components
 interface TabIconProps {
-  name: string;
-  focused: boolean;
-  primaryColor: string;
-  inactiveColor: string;
+  name: keyof typeof MaterialCommunityIcons.glyphMap;
+  color: string;
+  size: number;
 }
 
-const TabIcon = React.memo<TabIconProps>(
-  ({ name, focused, primaryColor, inactiveColor }) => (
-    <Icon
-      name={name}
-      size={22}
-      color={focused ? primaryColor : inactiveColor}
-      style={{ marginBottom: -4 }}
-    />
-  )
-);
+const TabIcon = React.memo<TabIconProps>(({ name, color, size }) => (
+  <MaterialCommunityIcons name={name} size={size} color={color} />
+));
 
 const WrappedWelcomeScreen = CreateWrappedScreen(WelcomeScreen);
 const WrappedLoginScreen = CreateWrappedScreen(LoginScreen);
@@ -120,15 +109,14 @@ const MainTabs = React.memo(() => {
 
   const getTabBarIcon = useCallback(
     (routeName: keyof TabParamList) =>
-      ({ focused }: { focused: boolean }) => (
+      ({ color }: { color: string }) => (
         <TabIcon
-          name={TAB_CONFIGURATION[routeName].icon}
-          focused={focused}
-          primaryColor={theme.colors.primary}
-          inactiveColor={theme.colors.onSurfaceVariant}
+          name={TAB_CONFIGURATION[routeName].icon as keyof typeof MaterialCommunityIcons.glyphMap}
+          color={color}
+          size={24}
         />
       ),
-    [theme.colors.primary, theme.colors.onSurfaceVariant]
+    []
   );
 
   return (
@@ -193,7 +181,6 @@ const MainTabs = React.memo(() => {
             </ThemeContainer>
           )}
         </Tab.Screen>
-
       </Tab.Navigator>
     </ScreenWrapper>
   );
