@@ -4,54 +4,24 @@ import { StatusType } from "@/domain/types/StatusType";
 
 // Representa a un usuario del sistema con su configuración base y preferencias
 export interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  gender: GenderType;
-  birthDate: string; // ISO string format
-  currency: CurrencyType;
-  language: string;
-  country: {
-    code: string;
-    name: string;
+  readonly id: string;
+  readonly email: string;
+  readonly fullName: string;
+  readonly gender: GenderType | null;
+  readonly birthDate: string | null; // ISO string format
+  readonly currency: CurrencyType;
+  readonly language: string;
+  readonly country: {
+    readonly code: string;
+    readonly name: string;
   };
-  preferences: {
-    notificationsEnabled: boolean;
-    defaultWalletId: string | null;
+  readonly preferences: {
+    readonly notificationsEnabled: boolean;
+    readonly defaultWalletId: string | null;
   };
-  metadata: {
-    createdAt: string; // ISO string format
-    updatedAt: string; // ISO string format
+  readonly metadata: {
+    readonly createdAt: string; // ISO string format
+    readonly updatedAt: string; // ISO string format
   };
-  status: StatusType;
+  readonly status: StatusType;
 }
-
-/*
-const usuarioAlex: User = {
-  id: "alex",
-  email: "alex.escalante@example.com",
-  fullName: "Alex Escalante",
-  gender: "masculino",
-  birthDate: "1997-04-22", // ISO 8601
-
-  currency: "PEN",
-  language: "es",
-
-  country: {
-    code: "PE",
-    name: "Perú"
-  },
-
-  preferences: {
-    notificationsEnabled: true,
-    defaultWalletId: "wallet1"
-  },
-
-  metadata: {
-    createdAt: "2025-07-01T12:00:00Z",
-    updatedAt: "2025-07-17T09:30:00Z"
-  },
-
-  status: "active"
-};
-*/

@@ -3,6 +3,8 @@ module.exports = function(api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
+      'babel-plugin-transform-typescript-metadata',
+      ['@babel/plugin-proposal-decorators', { legacy: true }],
       [
         'module-resolver',
         {
@@ -12,7 +14,8 @@ module.exports = function(api) {
             '@': './src'
           }
         }
-      ]
+      ],
+      'react-native-reanimated/plugin',
     ]
   };
 };

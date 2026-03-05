@@ -1,3 +1,3 @@
 export type GenderType =
-  | "masculino"
-  | "femenino";
+  | "male"
+  | "female";

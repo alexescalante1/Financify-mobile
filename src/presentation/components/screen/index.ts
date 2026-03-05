@@ -1,0 +1,1 @@
+export { SmoothPopupFullScreen } from './SmoothPopupFullScreen';

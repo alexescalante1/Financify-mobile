@@ -1,8 +1,7 @@
 import { registerRootComponent } from 'expo';
 
 import 'reflect-metadata';
-import '@/infrastructure/di/firebase.service';
-import '@/infrastructure/di/firebase.repository';
+import '@/infrastructure/di/container';
 
 import App from './App';
 

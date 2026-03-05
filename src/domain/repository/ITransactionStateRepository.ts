@@ -1,4 +1,4 @@
-import { Transaction } from '../models/Transaction';
+import { Transaction } from '@/domain/entities/Transaction';
 
 export interface ITransactionStateRepository {
   onTransactionsChanged(userId: string, callback: (transactions: Transaction[]) => void): () => void;

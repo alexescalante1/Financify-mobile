@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Provider as PaperProvider } from "react-native-paper";
 import {
   NavigationContainer,
@@ -6,59 +7,48 @@ import {
   DarkTheme,
 } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { StatusBar } from 'expo-status-bar';
-
-import { Routes } from "@/presentation/Routes";
-import { ThemeProvider, useThemeContext } from "./theme/ThemeProvider";
-import { lightTheme, darkTheme } from "./theme/materialTheme";
-import { AuthStorageService } from '@/infrastructure/storage/modules/AuthStorageService';
+import { Routes } from "@/presentation/navigation/Routes";
+import { ThemeProvider, useThemeContext } from "@/presentation/theme/ThemeProvider";
+import { lightTheme, darkTheme } from "@/presentation/theme/materialTheme";
+import { useAppInitializer } from "@/application/core/hooks/useAppInitializer";
+import { DependencyProvider } from '@/presentation/di/DependencyProvider';
+import { SnackbarProvider } from '@/presentation/components/feedback/SnackbarProvider';
 
 const AppContent = React.memo(() => {
   const { isDark } = useThemeContext();
+  useAppInitializer();
 
-  const paperTheme = useMemo(() => 
-    isDark ? darkTheme : lightTheme, 
-    [isDark]
-  );
-  
-  const navTheme = useMemo(() => 
-    isDark ? DarkTheme : DefaultTheme, 
+  const paperTheme = useMemo(() =>
+    isDark ? darkTheme : lightTheme,
     [isDark]
   );
 
-  // const statusBarStyle = useMemo(() => 
-  //   isDark ? "light" : "dark", 
-  //   [isDark]
-  // );
-  
+  const navTheme = useMemo(() =>
+    isDark ? DarkTheme : DefaultTheme,
+    [isDark]
+  );
+
   return (
     <PaperProvider theme={paperTheme}>
       <NavigationContainer theme={navTheme}>
-        {/* <StatusBar style={statusBarStyle} /> */}
-        <Routes />
+        <SnackbarProvider>
+          <Routes />
+        </SnackbarProvider>
       </NavigationContainer>
     </PaperProvider>
   );
 });
 
 export default function App() {
-  useEffect(() => {
-    const initServices = async () => {
-      try {
-        await AuthStorageService.init();
-      } catch (error) {
-        console.error('Error initializing AuthStorageService:', error);
-      }
-    };
-
-    initServices();
-  }, []);
-  
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <AppContent />
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <DependencyProvider>
+          <ThemeProvider>
+            <AppContent />
+          </ThemeProvider>
+        </DependencyProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
